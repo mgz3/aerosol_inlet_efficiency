@@ -8,20 +8,21 @@ d_inlet = 6*1e-3
 d_inlet_out = 8*1e-3
 L_offset= 30*1e-3
 L_shroud = 80*1e-3
-L_inlet=300*1e-3
+L_inlet=170*1e-3
 
 # PARAMETROS FLUIDO
-level = 500 # altura en metros
+level = 100 # altura en metros
 atmos = ATMOSPHERE_1976(level)
-U0 = 25 #m/s
+U0 = 20 #m/s
 U_U0 = 0.4
 U_shroud = U0 * U_U0
-Uinlet_Ushroud = 1
-U_inlet = Uinlet_Ushroud*U_shroud
+Q_shroud =U_shroud*(pi*(d_shroud)**2/4)     #m**3/s  caudal volumetrico
 Re_shroud = core.Reynolds(U0,d_shroud,atmos.rho,atmos.mu)
+Q_inlet = 2    #L/min  caudal volumetrico estipulado por Renard
+Q_inlet = Q_inlet/60000    #m**3/s
+U_inlet = 4*Q_inlet/(d_inlet**2*pi)
+Uinlet_Ushroud = U_inlet/U_shroud
 Re_inlet = core.Reynolds(U_inlet,d_inlet,atmos.rho,atmos.mu)
-Q_shroud =U_shroud*(pi*(d_shroud)**2/4)     #m**3/s  caudal volumetrico en I
-Q_inlet =U_inlet*(pi*(d_inlet)**2/4)     #m**3/s  caudal volumetrico en I
 
 # PARTICULAS
 rho_p = 1000 #kg/m**3    SUPOSICION
@@ -78,10 +79,10 @@ def Cc(dp, P, T):
     alpha = 1.207
     beta = 0.440
     gamma = 0.596
-    print(dp)
-    print(P)
-    print(T)
-    print(Kn(dp,P,T))
+    # print(dp)
+    # print(P)
+    # print(T)
+    # print(Kn(dp,P,T))
     return 1 + Kn(dp, P, T) * (alpha + beta * exp(-gamma / Kn(dp, P, T)))
     # P = P*10**-3
     # cc2 = 1 + 1/(P*dp)*(15.60+7*exp(-0.059*P*dp))
@@ -116,15 +117,17 @@ def n_sedim(d,L,rho_p,dp,mu,P,T,Q,V,re,ang=0):
     """
     Vts = tau_rel(rho_p,dp,mu,P,T)*9.81
 
-    eta = 3/4*L/d*Vts/V
-    rendimiento = 1-2/pi*(2*eta*sqrt(1-eta**(2/3))-eta**(1/3)*sqrt(1-eta**(2/3))+asin(eta**(1/3)))
+    # eta = 3/4*L/d*Vts/V
+    # rendimiento = 1-2/pi*(2*eta*sqrt(1-eta**(2/3))-eta**(1/3)*sqrt(1-eta**(2/3))+asin(eta**(1/3)))
 
     # stokes = core.Stokes_number(V, dp, d, rho_p, atmos.mu)
     # Z = L*Vts/(d*V)
     # K = sqrt(Z*stokes)*re**(-1/4)
     # rendimiento = exp(-4.7*K**0.75)
-    return rendimiento
-    # return exp(-1*(d*L*Vts*cos(ang*pi/180))/Q)
+    # return rendimiento
+    valor = exp(-1*(d*L*Vts*cos(ang*pi/180))/Q)
+    print('este valor: ',valor)
+    return valor
 
 
 # difusion
@@ -169,13 +172,14 @@ def n_turb_inert(d,L,Q,re,V,dp):
 
     """
     stokes = core.Stokes_number(V, dp, d, rho_p, atmos.mu)
-    # tau_mas = 0.0395*stokes*re**(3/4)
-    # if tau_mas > 12.9:
-    #     V_mas = 0.1
-    # else:
-    #     V_mas = 6*10**-4*tau_mas**2+2*10**-8*re
-    # Vt = V_mas*V/(5.03*re**(1/8))
-    Vt = (6*10**-4*(0.0395*stokes*re**(3/4))**2+re*2*10**(-8))/(5.03*re**(1/8))*V
+    print(dp, stokes)
+    tau_mas = 0.0395*stokes*re**(3/4)
+    if tau_mas > 12.9:
+        V_mas = 0.1
+    else:
+        V_mas = 6*10**-4*tau_mas**2+2*10**-8*re
+    Vt = V_mas*V/(5.03*re**(1/8))
+    # Vt = (6*10**-4*(0.0395*stokes*re**(3/4))**2+re*2*10**(-8))/(5.03*re**(1/8))*V
     return exp(-(pi*d*L*Vt)/(Q))
 # ----------------------------------------------------------------------------------------------------------------------
 EFICIENCIAS_SHROUD = []
@@ -214,19 +218,23 @@ for dp in diametros_micro:
     inlet_eff_diff.append(n_dif(dp,atmos.P,atmos.T,L_inlet,Q_shroud,atmos.mu,Re_inlet,atmos.rho))
     inlet_eff_sed.append(n_sedim(d_inlet,L_inlet,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_inlet,U_inlet,Re_inlet))
     inlet_eff_turb.append(n_turb_inert(d_inlet,L_inlet,Q_inlet,Re_inlet,U_inlet,dp))
+    # inlet_eff_turb.append(n_turb_inert(d_inlet,L_inlet,Q_inlet,Re_inlet,U_inlet,dp))
 
 
 
 
 
 for i in range(len(diametros_micro)):
+    # EFICIENCIAS_SHROUD.append(shroud_eff_asp[i]*shroud_eff_transm[i]*shroud_eff_diff[i])
+    # EFICIENCIAS_INLET.append(inlet_eff_asp[i]*inlet_eff_transm[i]*inlet_eff_diff[i])
     EFICIENCIAS_SHROUD.append(shroud_eff_asp[i]*shroud_eff_transm[i]*shroud_eff_sed[i]*shroud_eff_diff[i])
     EFICIENCIAS_INLET.append(inlet_eff_asp[i]*inlet_eff_transm[i]*inlet_eff_sed[i]*inlet_eff_diff[i])
     EFICIENCIAS_TOTAL.append(EFICIENCIAS_SHROUD[i]*EFICIENCIAS_INLET[i]*FACTOR[i])
+    # EFICIENCIAS_TOTAL.append(EFICIENCIAS_SHROUD[i]*EFICIENCIAS_INLET[i])
 
 
 import matplotlib.pyplot as plt
-fig, axs = plt.subplots(3,2,constrained_layout = True)
+fig1, axs = plt.subplots(3,2,constrained_layout = True)
 for ax in axs.flat:
     ax.grid()
     ax.set(xlabel=r'Diametro $\mu$m', ylabel=r'Eficiencia $\eta$')
@@ -270,9 +278,9 @@ plot_eff(ax4,diametros_micro,inlet_eff_sed,'b','sedimentacion')
 plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET,'k','TOTAL INLET')
 plot_eff(ax6,diametros_micro,FACTOR,'g','FACTOR')
 
-plt.show()
 
-fig, ax = plt.subplots()
+fig2, ax = plt.subplots(1,1)
+
 ax.plot(diametros_micro, EFICIENCIAS_TOTAL,label='EFICIENCIA TOTAL')
 ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIAS_INLET')
 ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIAS_SHROUD')
@@ -281,5 +289,12 @@ ax.legend()
 ax.grid()
 ax.set_xlabel(r'Particle Diameter, dp (\textmu m)')
 ax.set_ylabel(r'Efficiency $\eta$')
+
+# fig1.show()
+# fig2.show()
 plt.show()
+print('done')
+
+
+# plt.show()
 
