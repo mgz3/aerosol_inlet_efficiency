@@ -283,7 +283,6 @@ plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_ASP,'cyan','INLET ASPIRACION')
 plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_TRANSP,'m','INLET TRANSPORTE')
 
 
-
 fig2, ax = plt.subplots(1,1)
 
 ax.plot(diametros_micro, EFICIENCIAS_TOTAL,label='EFICIENCIA TOTAL',color='k',marker='o',linestyle='',markersize=2)
