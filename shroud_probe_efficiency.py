@@ -1,6 +1,7 @@
 from fluids import core, ATMOSPHERE_1976
 import numpy as np
 from math import exp, pi, cos, sqrt, asin
+from scipy.optimize import curve_fit
 
 # DIMENSIONES [m]
 d_shroud = 20*1e-3
@@ -25,7 +26,7 @@ Uinlet_Ushroud = U_inlet/U_shroud
 Re_inlet = core.Reynolds(U_inlet,d_inlet,atmos.rho,atmos.mu)
 
 # PARTICULAS
-rho_p = 1000 #kg/m**3    SUPOSICION
+rho_p = 1000 #kg/m**3    SUPOSICION  ESTANDAR
 diametros_micro = np.array([0.25,0.35,0.45,0.55,0.65,0.8,1,(1.1+3)/2,(3+5)/2,(5+7.5)/2,(7.5+10)/2,(10+12.5)/2,(12.5+15)/2,(15+17.5)/2,(17.5+20)/2,(20+22)/2,(22+30)/2,(30+40)/2,(40+50)/2])
 diametros_micro = diametros_micro*10**-6
 
@@ -62,40 +63,21 @@ def factor_corr(u_u0,dp,V,diam):
 k_boltzman = 1.38*10**-23 #N.m/K
 
 def tau_rel(rho_p, dp, mu, P, T):
-    return rho_p * dp**2 * Cc(dp, P, T) / (18 * mu)
-    # return rho_p * dp**2 * Cc_2(dp, P, T) / (18 * mu)
+    tau = rho_p * dp**2 * Cc(dp, P, T) / (18 * mu)
+    return tau
 
 def Kn(dp, P, T):
     P = P * 10 ** -3
     lambda_r = 0.0664 * (101 / P) * (T / 293) * ((1 + 110 / 293) / (1 + 110 / T))
     lambda_r = lambda_r *10**-6
-    return lambda_r
-    # return 2 * LAMBDA(P, T) / dp
+    kn = 2*lambda_r/dp
+    return kn
 
 def Cc(dp, P, T):
-    # alpha = 1.142
-    # beta = 0.558
-    # gamma = 0.999
-    alpha = 1.207
-    beta = 0.440
-    gamma = 0.596
-    # print(dp)
-    # print(P)
-    # print(T)
-    # print(Kn(dp,P,T))
-    return 1 + Kn(dp, P, T) * (alpha + beta * exp(-gamma / Kn(dp, P, T)))
-    # P = P*10**-3
-    # cc2 = 1 + 1/(P*dp)*(15.60+7*exp(-0.059*P*dp))
-    # return cc2
-
-
-def Cc_2(dp, P, T):
-    dp_micro = dp * 10 ** 6
-    p_kpa = P * 10 ** -3
-    alpha = 15.6
-    beta = 7
-    gamma = 0.059
-    return 1 + 1 / (p_kpa * dp_micro) * (alpha + beta * exp(-gamma / (p_kpa * dp_micro)))
+    P = P * 10 ** -3
+    dp = dp/ 10 ** -6
+    cc = 1 + 1*(15.60+7*np.exp(-0.059*P*dp))/(P*dp)
+    return cc
 
 
 # .............................................
@@ -116,18 +98,9 @@ def n_sedim(d,L,rho_p,dp,mu,P,T,Q,V,re,ang=0):
     Returns: rendimiento difusivo
     """
     Vts = tau_rel(rho_p,dp,mu,P,T)*9.81
-
-    # eta = 3/4*L/d*Vts/V
-    # rendimiento = 1-2/pi*(2*eta*sqrt(1-eta**(2/3))-eta**(1/3)*sqrt(1-eta**(2/3))+asin(eta**(1/3)))
-
-    # stokes = core.Stokes_number(V, dp, d, rho_p, atmos.mu)
-    # Z = L*Vts/(d*V)
-    # K = sqrt(Z*stokes)*re**(-1/4)
-    # rendimiento = exp(-4.7*K**0.75)
-    # return rendimiento
-    valor = exp(-1*(d*L*Vts*cos(ang*pi/180))/Q)
-    print('este valor: ',valor)
-    return valor
+    # print(Vts)
+    eficiencia = np.exp(-d*L*Vts/Q)
+    return eficiencia
 
 
 # difusion
@@ -148,13 +121,12 @@ def n_dif(dp,P,T,L,Q,mu,re,rho_f):
     Returns: rendimiento difusivo
 
     """
-    # B = Cc(dp,P,T)/(3*pi*mu*dp)
-    B = Cc_2(dp,P,T)/(3*pi*mu*dp)
+    B = Cc(dp,P,T)/(3*pi*mu*dp)
     D = k_boltzman*T*B
     zita = pi *D*L/Q
     Sc=mu/(rho_f*D)
     Sh = 0.0118*re**(7/8)*Sc**(1/3)
-    n = exp(-zita * Sh)
+    n = np.exp(-zita * Sh)
     return n
 
 def n_turb_inert(d,L,Q,re,V,dp):
@@ -179,16 +151,19 @@ def n_turb_inert(d,L,Q,re,V,dp):
     else:
         V_mas = 6*10**-4*tau_mas**2+2*10**-8*re
     Vt = V_mas*V/(5.03*re**(1/8))
-    # Vt = (6*10**-4*(0.0395*stokes*re**(3/4))**2+re*2*10**(-8))/(5.03*re**(1/8))*V
-    return exp(-(pi*d*L*Vt)/(Q))
+    return np.exp(-(pi*d*L*Vt)/(Q))
 # ----------------------------------------------------------------------------------------------------------------------
 EFICIENCIAS_SHROUD = []
+EFICIENCIAS_SHROUD_ASP = []
+EFICIENCIAS_SHROUD_TRANSP = []
 shroud_eff_asp = []
 shroud_eff_transm = []
 shroud_eff_sed = []
 shroud_eff_diff = []
 shroud_eff_turb = []
 EFICIENCIAS_INLET = []
+EFICIENCIAS_INLET_ASP = []
+EFICIENCIAS_INLET_TRANSP = []
 inlet_eff_asp = []
 inlet_eff_transm = []
 inlet_eff_sed = []
@@ -225,12 +200,16 @@ for dp in diametros_micro:
 
 
 for i in range(len(diametros_micro)):
-    # EFICIENCIAS_SHROUD.append(shroud_eff_asp[i]*shroud_eff_transm[i]*shroud_eff_diff[i])
-    # EFICIENCIAS_INLET.append(inlet_eff_asp[i]*inlet_eff_transm[i]*inlet_eff_diff[i])
-    EFICIENCIAS_SHROUD.append(shroud_eff_asp[i]*shroud_eff_transm[i]*shroud_eff_sed[i]*shroud_eff_diff[i])
-    EFICIENCIAS_INLET.append(inlet_eff_asp[i]*inlet_eff_transm[i]*inlet_eff_sed[i]*inlet_eff_diff[i])
+    # SHROUD
+    EFICIENCIAS_SHROUD_ASP.append(shroud_eff_asp[i]*shroud_eff_transm[i])
+    EFICIENCIAS_SHROUD_TRANSP.append(shroud_eff_sed[i]*shroud_eff_diff[i]*shroud_eff_turb[i])
+    EFICIENCIAS_SHROUD.append(shroud_eff_asp[i]*shroud_eff_transm[i]*shroud_eff_sed[i]*shroud_eff_diff[i]*shroud_eff_turb[i])
+    # INLET
+    EFICIENCIAS_INLET_ASP.append(inlet_eff_asp[i]*inlet_eff_transm[i])
+    EFICIENCIAS_INLET_TRANSP.append(inlet_eff_sed[i]*inlet_eff_diff[i]*inlet_eff_turb[i])
+    EFICIENCIAS_INLET.append(inlet_eff_asp[i]*inlet_eff_transm[i]*inlet_eff_sed[i]*inlet_eff_diff[i]*inlet_eff_turb[i])
+    # TOTAL
     EFICIENCIAS_TOTAL.append(EFICIENCIAS_SHROUD[i]*EFICIENCIAS_INLET[i]*FACTOR[i])
-    # EFICIENCIAS_TOTAL.append(EFICIENCIAS_SHROUD[i]*EFICIENCIAS_INLET[i])
 
 
 import matplotlib.pyplot as plt
@@ -256,35 +235,65 @@ ax6.set_title('total inlet')
 
 diametros_micro = diametros_micro/10**-6
 
-def plot_eff(ax,diametros,eficiencias,color,label):
-    ax.plot(diametros, eficiencias,color,label=label)
+def plot_eff(ax,diametros,eficiencias,color,label,grado=4,turb=False):
+    ax.plot(diametros, eficiencias,color,label=label,marker='o',linestyle='',markersize=2)
     ax.legend()
+    if turb:
+        fit_exp_curve_exp(ax, diametros, eficiencias, color)
+    else:
+        fit_exp_curve(ax,diametros,eficiencias,color,grado)
+
+
+def fit_exp_curve(ax,dp,n,color,grado=4):
+    z = np.polyfit(dp, n, grado)
+    f = np.poly1d(z)
+
+    # calculate new x's and y's
+    x_new = np.linspace(dp[0], dp[-1], 50)
+    y_new = f(x_new)
+    ax.plot(x_new, y_new,color=color)
+
+def func(x, a, b,c,d ):
+    return c+a * np.exp(-b * x**2)
+def fit_exp_curve_exp(ax,t,k,color):
+    T_fit = t
+    x = np.linspace(T_fit[0],T_fit[-1],50)
+    yhat = np.array(k, dtype=float)
+    popt_yhat, pcov_yhat = curve_fit(func, T_fit, yhat,maxfev=100000)
+    ax.plot(x, func(x, *popt_yhat), label="",color=color)
 
 
 # SHROUD
 plot_eff(ax1,diametros_micro,shroud_eff_asp,'b','asp shroud')
 plot_eff(ax1,diametros_micro,shroud_eff_transm,'r','transm shroud')
 plot_eff(ax3,diametros_micro,shroud_eff_diff,'r','difusion')
-plot_eff(ax3,diametros_micro,shroud_eff_turb,'g','turbulento')
+plot_eff(ax3,diametros_micro,shroud_eff_turb,'g','turbulento',turb=True)
 plot_eff(ax3,diametros_micro,shroud_eff_sed,'b','sedimentacion')
 plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD,'k','TOTAL SHROUD')
-plot_eff(ax5,diametros_micro,FACTOR,'g','FACTOR')
+plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD_ASP,'cyan','SHROUD ASPIRACION')
+plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD_TRANSP,'m','SHROUD TRANSPORTE')
 # INLET
 plot_eff(ax2,diametros_micro,inlet_eff_asp,'b','asp inlet')
 plot_eff(ax2,diametros_micro,inlet_eff_transm,'r','transm inlet')
 plot_eff(ax4,diametros_micro,inlet_eff_diff,'r','difusion')
-plot_eff(ax4,diametros_micro,inlet_eff_turb,'g','turbulento')
+plot_eff(ax4,diametros_micro,inlet_eff_turb,'g','turbulento',turb=True)
 plot_eff(ax4,diametros_micro,inlet_eff_sed,'b','sedimentacion')
 plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET,'k','TOTAL INLET')
-plot_eff(ax6,diametros_micro,FACTOR,'g','FACTOR')
+plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_ASP,'cyan','INLET ASPIRACION')
+plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_TRANSP,'m','INLET TRANSPORTE')
 
 
 fig2, ax = plt.subplots(1,1)
 
-ax.plot(diametros_micro, EFICIENCIAS_TOTAL,label='EFICIENCIA TOTAL')
-ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIAS_INLET')
-ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIAS_SHROUD')
-ax.plot(diametros_micro, FACTOR,label='FACTOR')
+ax.plot(diametros_micro, EFICIENCIAS_TOTAL,label='EFICIENCIA TOTAL',color='k',marker='o',linestyle='',markersize=2)
+fit_exp_curve(ax,diametros_micro,EFICIENCIAS_TOTAL,color='k')
+ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIAS_INLET',color='cyan',marker='o',linestyle='',markersize=2)
+fit_exp_curve(ax,diametros_micro,EFICIENCIAS_INLET,color='cyan')
+ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIAS_SHROUD',color='m',marker='o',linestyle='',markersize=2)
+fit_exp_curve(ax,diametros_micro,EFICIENCIAS_SHROUD,color='m')
+ax.plot(diametros_micro, FACTOR,label='FACTOR',color='dimgray',marker='o',linestyle='',markersize=2)
+fit_exp_curve(ax,diametros_micro,FACTOR,color='dimgray')
+# ax.set_xlim(0,20)
 ax.legend()
 ax.grid()
 ax.set_xlabel(r'Particle Diameter, dp (\textmu m)')
