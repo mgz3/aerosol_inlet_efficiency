@@ -9,7 +9,7 @@ d_inlet = 6*1e-3
 d_inlet_out = 8*1e-3
 L_offset= 30*1e-3
 L_shroud = 80*1e-3
-L_inlet=200*1e-3
+L_inlet=230*1e-3
 # para hacer el analisis dividiendo en tramos
 DOS_TRAMOS = False
 L_inlet_1=15*1e-3 #largo del tramo 1
@@ -21,7 +21,7 @@ d_inlet_2=8*1e-3 #diametro del tramo 2
 # PARAMETROS FLUIDO
 level = 100 # altura en metros
 atmos = ATMOSPHERE_1976(level)
-U0 = 20 #m/s
+U0 = 25 #m/s
 U_U0 = 0.4
 U_shroud = U0 * U_U0
 Q_shroud =U_shroud*(pi*(d_shroud)**2/4)     #m**3/s  caudal volumetrico
@@ -309,6 +309,7 @@ plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_TRANSP,'m','INLET TRANSPORTE')
 
 fig2, ax = plt.subplots(1,1)
 
+ax.plot([0,50],[1,1],linestyle='dashed',color='gray')
 eff_total = ax.plot(diametros_micro, EFICIENCIAS_TOTAL,label='EFICIENCIA TOTAL',color='k',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_TOTAL,color='k')
 eff_inlet = ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIAS_INLET',color='cyan',marker='o',linestyle='',markersize=2)
@@ -317,7 +318,8 @@ eff_shroud = ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIAS_SHRO
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_SHROUD,color='m')
 eff_factor = ax.plot(diametros_micro, FACTOR,label='FACTOR',color='dimgray',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,FACTOR,color='dimgray')
-# ax.set_xlim(0,20)
+ax.set_xlim(0,55)
+ax.set_ylim(0,maximo)
 ax.legend(fontsize=15,markerscale=2,framealpha=1,loc=2)
 ax.grid()
 ax.set_xlabel(r'Particle Diameter, dp [$\mu$m]')
@@ -339,7 +341,3 @@ if plot_bands:
 
 plt.show()
 print('done')
-
-
-# plt.show()
-

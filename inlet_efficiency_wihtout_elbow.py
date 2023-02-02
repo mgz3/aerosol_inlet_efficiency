@@ -337,7 +337,7 @@ for diametro_prueba_part in DIAMETROS:
     # eficiencia aspiracion
     stokes_int = stokes_particle(diametro_prueba_part, p, t, rho_p, VELOCIDAD_PRUEBA, mu, diam_I_int )
     # stokes_int = stokes
-    U0_U_int=1.5      #relacion uo/u, se supone 1 porque no tenemos manera rapida de aproximarla ni medirla
+    U0_U_int=1     #relacion uo/u, se supone 1 porque no tenemos manera rapida de aproximarla ni medirla
     n_aspiracion_int = n_asp(stokes_int,U0_U_int)
     n_trans_int=n_trans(stokes_int,U0_U_int)
     #eficiencia de transporte
@@ -378,7 +378,7 @@ VI = VELOCIDAD_PRUEBA                              # m/s velocidad en diam_1
 QI =VI*(pi*(diam_I)**2/4)     #m**3/s  caudal volumetrico en I
 
 EFICIENCIAS = []
-U0_U = 1.5
+U0_U = 1
 
 for diametro_prueba_part in DIAMETROS:
     stokes = stokes_particle(diametro_prueba_part, p, t, rho_p, VELOCIDAD_PRUEBA, mu, diam_1 * 10 ** -3)
@@ -419,7 +419,9 @@ VI = VELOCIDAD_PRUEBA                              # m/s velocidad en diam_1
 QI =VI*(pi*(diam_I)**2/4)     #m**3/s  caudal volumetrico en I
 
 EFICIENCIAS = []
-
+n_turb_mat = []
+n_diff_mat = []
+n_sed_mat = []
 for diametro_prueba_part in DIAMETROS:
     stokes = stokes_particle(diametro_prueba_part, p, t, rho_p, VELOCIDAD_PRUEBA, mu, diam_1 * 10 ** -3)
     # ----------------------------------------------------------------------------------------------------------------------
@@ -434,6 +436,9 @@ for diametro_prueba_part in DIAMETROS:
     N_SED_I_ext=n_sedim(diam_I,LI,rho_p,diametro_prueba_part,mu,p,t,QI)
     N_TURB_INER_I_ext=n_turb_inert(diam_I,LI,QI,stokes,re,VI)
 
+    n_turb_mat.append(N_TURB_INER_I_ext)
+    n_sed_mat.append(N_SED_I_ext)
+    n_diff_mat.append(N_DIF_I_ext)
 
     N_SAMPLING = n_aspiracion_ext*n_trans_ext
     N_TRANSPORT = N_DIF_I_ext*N_SED_I_ext*N_TURB_INER_I_ext
@@ -449,6 +454,10 @@ for diametro_prueba_part in DIAMETROS:
     N_TRANSPORT_EXT = N_DIF_I_ext*N_SED_I_ext*N_TURB_INER_I_ext
     N_PROBE_EXT = N_SAMPLING_EXT*N_TRANSPORT_EXT
 
+
+ax.plot(diametros_micro, n_sed_mat,label='n_sed_mat probe  150mm')
+ax.plot(diametros_micro, n_turb_mat,label='n_turb_mat probe  150mm')
+ax.plot(diametros_micro, n_diff_mat,label='n_diff_mat probe  150mm')
 ax.plot(diametros_micro, EFICIENCIAS,'r',label='Straight probe  150mm')
 
 plt.rcParams['text.usetex'] = True
@@ -487,7 +496,7 @@ for VELOCIDAD_PRUEBA in VELOCIDAD:
         # eficiencia aspiracion
         stokes_int = stokes_particle(diametro_prueba_part, p, t, rho_p, VELOCIDAD_PRUEBA, mu, diam_I_int)
         # stokes_int = stokes
-        U0_U_int = 1.5  # relacion uo/u, se supone 1 porque no tenemos manera rapida de aproximarla ni medirla
+        U0_U_int = 1  # relacion uo/u, se supone 1 porque no tenemos manera rapida de aproximarla ni medirla
         n_aspiracion_int = n_asp(stokes_int, U0_U_int)
         n_trans_int = n_trans(stokes_int, U0_U_int)
         # eficiencia de transporte
@@ -525,7 +534,7 @@ for VELOCIDAD_PRUEBA in VELOCIDAD:
     QI = VI * (pi * (diam_I) ** 2 / 4)  # m**3/s  caudal volumetrico en I
 
     EFICIENCIAS = []
-    U0_U = 1.5
+    U0_U = 1
 
     for diametro_prueba_part in DIAMETROS:
         stokes = stokes_particle(diametro_prueba_part, p, t, rho_p, VELOCIDAD_PRUEBA, mu, diam_1 * 10 ** -3)
