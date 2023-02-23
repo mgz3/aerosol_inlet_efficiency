@@ -11,18 +11,18 @@ L_offset= 30*1e-3
 L_shroud = 80*1e-3
 L_inlet=230*1e-3
 # para hacer el analisis dividiendo en tramos
-DOS_TRAMOS = False
+DOS_TRAMOS = True
 L_inlet_1=15*1e-3 #largo del tramo 1
 L_inlet_2=L_inlet-L_inlet_1 #largo del tramo 2
 d_inlet_1= 6*1e-3
-d_inlet_2=8*1e-3 #diametro del tramo 2
+d_inlet_2=8.5*1e-3 #diametro del tramo 2
 
 
 # PARAMETROS FLUIDO
 level = 100 # altura en metros
 atmos = ATMOSPHERE_1976(level)
-U0 = 25 #m/s
-U_U0 = 0.4
+U0 = 14 #m/s
+U_U0 = 0.2
 U_shroud = U0 * U_U0
 Q_shroud =U_shroud*(pi*(d_shroud)**2/4)     #m**3/s  caudal volumetrico
 Re_shroud = core.Reynolds(U0,d_shroud,atmos.rho,atmos.mu)
@@ -215,7 +215,8 @@ for dp in diametros_micro:
         inlet_eff_diff.append(n_dif(dp,atmos.P,atmos.T,L_inlet,Q_inlet,atmos.mu,Re_inlet,atmos.rho))
         inlet_eff_sed.append(n_sedim(d_inlet,L_inlet,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_inlet,U_inlet,Re_inlet))
         inlet_eff_turb.append(n_turb_inert(d_inlet,L_inlet,Q_inlet,Re_inlet,U_inlet,dp))
-
+# ------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 
 
 
@@ -244,17 +245,17 @@ for ax in axs.flat:
 
 
 ax1 = axs[0, 0] # sampling shroud
-ax1.set_title('sampling shroud')
+ax1.set_title('Muestreo Envoltura')
 ax2 = axs[0, 1] # sampling inlet
-ax2.set_title('sampling inlet')
+ax2.set_title('Muestreo Toma')
 ax3 = axs[1, 0] # transport shroud
-ax3.set_title('transport shroud')
+ax3.set_title('Transporte Envoltura')
 ax4 = axs[1, 1] # transport inlet
-ax4.set_title('transport inlet')
+ax4.set_title('Transporte Toma')
 ax5 = axs[2, 0] # total shroud
-ax5.set_title('total shroud')
+ax5.set_title('Total Envoltura')
 ax6 = axs[2, 1] # total inlet
-ax6.set_title('total inlet')
+ax6.set_title('Total Toma')
 
 
 diametros_micro = diametros_micro/10**-6
@@ -288,23 +289,23 @@ def fit_exp_curve_exp(ax,t,k,color):
 
 
 # SHROUD
-plot_eff(ax1,diametros_micro,shroud_eff_asp,'b','asp shroud')
-plot_eff(ax1,diametros_micro,shroud_eff_transm,'r','transm shroud')
-plot_eff(ax3,diametros_micro,shroud_eff_diff,'r','difusion')
-plot_eff(ax3,diametros_micro,shroud_eff_turb,'g','turbulento',turb=True)
-plot_eff(ax3,diametros_micro,shroud_eff_sed,'b','sedimentacion')
-plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD,'k','TOTAL SHROUD')
-plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD_ASP,'cyan','SHROUD ASPIRACION')
-plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD_TRANSP,'m','SHROUD TRANSPORTE')
+plot_eff(ax1,diametros_micro,shroud_eff_asp,'b','Asp. Envoltura')
+plot_eff(ax1,diametros_micro,shroud_eff_transm,'r','Transm. Envoltura')
+plot_eff(ax3,diametros_micro,shroud_eff_diff,'r','Difusion')
+plot_eff(ax3,diametros_micro,shroud_eff_turb,'g','Turbulento',turb=True)
+plot_eff(ax3,diametros_micro,shroud_eff_sed,'b','Sedimentacion')
+plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD,'k','TOTAL ENVOLTURA')
+plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD_ASP,'cyan','ENVOLTURA ASPIRACION')
+plot_eff(ax5,diametros_micro,EFICIENCIAS_SHROUD_TRANSP,'m','ENVOLTURA TRANSPORTE')
 # INLET
-plot_eff(ax2,diametros_micro,inlet_eff_asp,'b','asp inlet')
-plot_eff(ax2,diametros_micro,inlet_eff_transm,'r','transm inlet')
-plot_eff(ax4,diametros_micro,inlet_eff_diff,'r','difusion')
-plot_eff(ax4,diametros_micro,inlet_eff_turb,'g','turbulento',turb=True)
-plot_eff(ax4,diametros_micro,inlet_eff_sed,'b','sedimentacion')
-plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET,'k','TOTAL INLET')
-plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_ASP,'cyan','INLET ASPIRACION')
-plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_TRANSP,'m','INLET TRANSPORTE')
+plot_eff(ax2,diametros_micro,inlet_eff_asp,'b','Asp. Toma')
+plot_eff(ax2,diametros_micro,inlet_eff_transm,'r','Transm. Toma')
+plot_eff(ax4,diametros_micro,inlet_eff_diff,'r','Difusion')
+plot_eff(ax4,diametros_micro,inlet_eff_turb,'g','Turbulento',turb=True)
+plot_eff(ax4,diametros_micro,inlet_eff_sed,'b','Sedimentacion')
+plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET,'k','TOTAL TOMA')
+plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_ASP,'cyan','TOMA ASPIRACION')
+plot_eff(ax6,diametros_micro,EFICIENCIAS_INLET_TRANSP,'m','TOMA TRANSPORTE')
 
 
 fig2, ax = plt.subplots(1,1)
@@ -312,18 +313,20 @@ fig2, ax = plt.subplots(1,1)
 ax.plot([0,50],[1,1],linestyle='dashed',color='gray')
 eff_total = ax.plot(diametros_micro, EFICIENCIAS_TOTAL,label='EFICIENCIA TOTAL',color='k',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_TOTAL,color='k')
-eff_inlet = ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIAS_INLET',color='cyan',marker='o',linestyle='',markersize=2)
+eff_inlet = ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIA TOTAL TOMA',color='cyan',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_INLET,color='cyan')
-eff_shroud = ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIAS_SHROUD',color='m',marker='o',linestyle='',markersize=2)
+eff_shroud = ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIA TOTAL ENVOLTURA',color='m',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_SHROUD,color='m')
-eff_factor = ax.plot(diametros_micro, FACTOR,label='FACTOR',color='dimgray',marker='o',linestyle='',markersize=2)
-fit_exp_curve(ax,diametros_micro,FACTOR,color='dimgray')
+# eff_factor = ax.plot(diametros_micro, FACTOR,label='FACTOR',color='dimgray',marker='o',linestyle='',markersize=2)
+# fit_exp_curve(ax,diametros_micro,FACTOR,color='dimgray')
 ax.set_xlim(0,55)
 ax.set_ylim(0,maximo)
 ax.legend(fontsize=15,markerscale=2,framealpha=1,loc=2)
 ax.grid()
-ax.set_xlabel(r'Particle Diameter, dp [$\mu$m]')
-ax.set_ylabel(r'Efficiency $\eta$')
+# ax.set_xlabel(r'Particle Diameter, dp [$\mu$m]')
+ax.set_xlabel(r'Diametro de Particula, dp [$\mu$m]')
+# ax.set_ylabel(r'Efficiency $\eta$')
+ax.set_ylabel(r'Eficiencia $\eta$')
 
 plot_bands = True
 band_list = [0.2,0.3,0.4,0.5,0.6,0.7,0.9,1.1,3,5,7.5,10,12.5,15,17.5,20,22,30,40,50]
@@ -335,7 +338,7 @@ if plot_bands:
         fill = ax.fill_between(rango,0,maximo,alpha=0.5)
         banda_fill.append(fill)
     legend2=Legend(ax,banda_fill,['{} - {}'.format(band_list[i],band_list[i+1]) for i in range(len(band_list)-1)],
-          loc=1,labelcolor='linecolor',title=r'LOAC Ranges [$\mu$m]',framealpha=1,
+          loc=1,labelcolor='linecolor',title=r'LOAC Rangos [$\mu$m]',framealpha=1,
                    prop={'weight':'black','size':11})
     ax.add_artist(legend2)
 
