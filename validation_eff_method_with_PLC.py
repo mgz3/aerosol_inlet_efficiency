@@ -160,6 +160,8 @@ diametros_micro = diametros_micro*10**-6
 asp=[]
 trans = []
 samp = []
+sed = []
+turb = []
 particulas = np.linspace(0.1,50,300)*10**-6
 U0_U = U0/U_inlet
 for dp in particulas:
@@ -167,15 +169,21 @@ for dp in particulas:
     asp_val = n_asp(U0_U,stk)
     trans_val = n_trans(U0_U,stk)
     samp_val = asp_val*trans_val
+    turb_val = n_turb_inert(d_inlet,L_inlet,Q_inlet,Re_inlet,U_inlet,dp)
+    sed_val = n_sedim(d_inlet,L_inlet,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_inlet,U_inlet,Re_inlet)
     asp.append(asp_val)
     trans.append(trans_val)
     samp.append(samp_val)
+    sed.append(sed_val)
+    turb.append(turb_val)
 
 particulas = np.linspace(0.1,50,300)
 
-plt.plot(particulas,asp,label='asp')
-plt.plot(particulas,trans,label='trans')
-plt.plot(particulas,samp,label='samp')
+# plt.plot(particulas,asp,label='asp')
+# plt.plot(particulas,trans,label='trans')
+# plt.plot(particulas,samp,label='samp')
+plt.plot(particulas,sed,label='sed')
+plt.plot(particulas,turb,label='turb')
 
 # plt.xscale('log')
 plt.legend()
