@@ -5,12 +5,33 @@ from math import exp, pi, cos, sqrt, asin
 from scipy.optimize import curve_fit
 import pandas as pd
 # ----------------------------------------------------------------------------------------------------------------------
+def replace_comma_with_dot(x):
+    try:
+        return float(x.replace(",", "."))
+    except:
+        return x
+
+
+wd = '/home/mgonzalez/Documentos/Digitalizacion_Aerosoles_Eff/PLC/'
+file = 'asp.csv'
+df = pd.read_csv(wd + file)
+df_asp = df.applymap(replace_comma_with_dot)
+file = 'diff.csv'
+df = pd.read_csv(wd + file)
+df_diff = df.applymap(replace_comma_with_dot)
+file = 'sampling.csv'
+df = pd.read_csv(wd + file)
+df_sampling = df.applymap(replace_comma_with_dot)
+file = 'sedim.csv'
+df = pd.read_csv(wd + file)
+df_sedim = df.applymap(replace_comma_with_dot)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # EFICIENCIA MUESTREO
 # aspiracion
 def n_asp(u0_u,stokes):
-    n_aspiracion =  1 + (u0_u-1)*(1-(1+stokes*(2+0.617*(1/u0_u)))**-1) #valido para 0.005 < stokes < 2.03
-    # n_aspiracion =  1 + (u0_u-1)*(1-(1+3.77*stokes**(0.883))**-1) #valido para 0.005 < stokes < 10
+    # n_aspiracion =  1 + (u0_u-1)*(1-(1+stokes*(2+0.617*(1/u0_u)))**-1) #valido para 0.005 < stokes < 2.03
+    n_aspiracion =  1 + (u0_u-1)*(1-(1+3.77*stokes**(0.883))**-1) #valido para 0.005 < stokes < 10
     return n_aspiracion
 
 
@@ -142,7 +163,7 @@ d_inlet_2=8.5*1e-3 #diametro del tramo 2
 # PARAMETROS FLUIDO
 level = 100 # altura en metros
 atmos = ATMOSPHERE_1976(level)
-U0 = 14 #m/s
+U0 =2.2 #m/s
 Q_inlet = 2    #L/min  caudal volumetrico estipulado por Renard
 Q_inlet = Q_inlet/60000    #m**3/s
 U_inlet = 4*Q_inlet/(d_inlet**2*pi)
@@ -160,33 +181,51 @@ diametros_micro = diametros_micro*10**-6
 asp=[]
 trans = []
 samp = []
+inlet = []
 sed = []
 turb = []
+diff = []
 particulas = np.linspace(0.1,50,300)*10**-6
 U0_U = U0/U_inlet
 for dp in particulas:
     stk = core.Stokes_number(U_inlet,dp,d_inlet,rho_p,atmos.mu)
     asp_val = n_asp(U0_U,stk)
     trans_val = n_trans(U0_U,stk)
-    samp_val = asp_val*trans_val
-    turb_val = n_turb_inert(d_inlet,L_inlet,Q_inlet,Re_inlet,U_inlet,dp)
-    sed_val = n_sedim(d_inlet,L_inlet,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_inlet,U_inlet,Re_inlet)
+    samp_val = asp_val * trans_val
+
+    turb_val_1 = n_turb_inert(d_inlet_1,L_inlet_1,Q_inlet,Re_inlet,U_inlet,dp)
+    sed_val_1 = n_sedim(d_inlet_1,L_inlet_1,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_inlet,U_inlet,Re_inlet)
+    diff_val_1 = n_dif(dp,atmos.P,atmos.T,L_inlet_1,Q_inlet,atmos.mu,Re_inlet,atmos.rho)
+
+    turb_val_2 = n_turb_inert(d_inlet_2,L_inlet_2,Q_inlet,Re_inlet,U_inlet,dp)
+    sed_val_2 = n_sedim(d_inlet_2,L_inlet_2,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_inlet,U_inlet,Re_inlet)
+    diff_val_2 = n_dif(dp,atmos.P,atmos.T,L_inlet_2,Q_inlet,atmos.mu,Re_inlet,atmos.rho)
+
+
     asp.append(asp_val)
     trans.append(trans_val)
     samp.append(samp_val)
-    sed.append(sed_val)
-    turb.append(turb_val)
+    sed.append(sed_val_1*sed_val_2)
+    turb.append(turb_val_1*turb_val_2)
+    diff.append(diff_val_1*diff_val_2)
+    inlet.append(samp_val*sed_val_1*sed_val_2*turb_val_1*turb_val_2*diff_val_1*diff_val_2)
 
 particulas = np.linspace(0.1,50,300)
 
-# plt.plot(particulas,asp,label='asp')
+# plt.plot(particulas,asp,label='asp',color='b')
 # plt.plot(particulas,trans,label='trans')
-# plt.plot(particulas,samp,label='samp')
-plt.plot(particulas,sed,label='sed')
-plt.plot(particulas,turb,label='turb')
-
+plt.plot(particulas,samp,label='samp',color='r')
+plt.plot(particulas,sed,label='sed',color='y')
+plt.plot(particulas,turb,label='turb',color='g')
+plt.plot(particulas,inlet,label='inlet',color='k')
+plt.plot(particulas,diff,label='diff',color='cyan',alpha=0.5)
 # plt.xscale('log')
-plt.legend()
 
-# plt.ylim(0,5)
+
+plt.plot(df_asp['x'],df_asp['Curve1'],'r',label='asp - PLC',linestyle='--')
+plt.plot(df_diff['x'],1-df_diff['Curve1'],'cyan',label='diff - PLC',linestyle='--')
+plt.plot(df_sedim['x'],1-df_sedim['Curve1'],'y',label='sedim - PLC',linestyle='--')
+plt.plot(df_sampling['x'],df_sampling['Curve1'],'k',label='sampling - PLC',linestyle='--')
+
+plt.legend()
 plt.show()
