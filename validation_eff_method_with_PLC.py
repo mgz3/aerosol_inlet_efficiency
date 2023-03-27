@@ -10,6 +10,7 @@ def replace_comma_with_dot(x):
         return float(x.replace(",", "."))
     except:
         return x
+        return x
 
 
 wd = '/home/mgonzalez/Documentos/Digitalizacion_Aerosoles_Eff/PLC/'
@@ -30,8 +31,8 @@ df_sedim = df.applymap(replace_comma_with_dot)
 # EFICIENCIA MUESTREO
 # aspiracion
 def n_asp(u0_u,stokes):
-    # n_aspiracion =  1 + (u0_u-1)*(1-(1+stokes*(2+0.617*(1/u0_u)))**-1) #valido para 0.005 < stokes < 2.03
-    n_aspiracion =  1 + (u0_u-1)*(1-(1+3.77*stokes**(0.883))**-1) #valido para 0.005 < stokes < 10
+    n_aspiracion =  1 + (u0_u-1)*(1-(1+stokes*(2+0.617*(1/u0_u)))**-1) #valido para 0.005 < stokes < 2.03
+    # n_aspiracion =  1 + (u0_u-1)*(1-(1+3.77*stokes**(0.883))**-1) #valido para 0.005 < stokes < 10
     return n_aspiracion
 
 
@@ -41,11 +42,8 @@ def n_trans(u0_u,stokes):
     return n_transport_inert
 
 # factor correccion Gong et al.
-def factor_corr(u_u0,dp,V,diam):
-    stokes = core.Stokes_number(V, dp, diam, rho_p, atmos.mu) #stokes del shroud
-    u0_u = 1/u_u0
-    if not 8900 <= Re_shroud <= 54000:
-        print('El valor del reynolds esta fuera del rango especificado por Gong.')
+def factor_corr(u0_u,stokes):
+    # stokes = core.Stokes_number(V, dp, diam, rho_p, atmos.mu) #stokes del shroud 
     factor = 1 - (u0_u-1)*0.861*stokes/(stokes*(2.34+0.939*(u0_u-1))+1)
     return factor
 
@@ -136,7 +134,7 @@ def n_turb_inert(d,L,Q,re,V,dp):
 
     """
     stokes = core.Stokes_number(V, dp, d, rho_p, atmos.mu)
-    print(dp, stokes)
+    # print(dp, stokes)
     tau_mas = 0.0395*stokes*re**(3/4)
     if tau_mas > 12.9:
         V_mas = 0.1

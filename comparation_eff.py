@@ -21,18 +21,9 @@ d_inlet_2=8.5*1e-3 #diametro del tramo 2
 # PARAMETROS FLUIDO
 level = 0 # altura en metros
 atmos = ATMOSPHERE_1976(level)
-U0 = 25 #m/s
-if U0 >= 8 and U0 < 11.5:
-    U_U0 = 0.3
-elif U0 >= 11.5 and U0 < 14:
-    U_U0 = 0.25
-elif U0 >= 14 and U0 < 25:
-    U_U0 = 0.2
-else:
-    U_U0 = 0.22
-
-print('VALOR DE U/U0: {}'.format(U_U0))
-U_shroud = U0 * U_U0
+U0 = 11.5 #m/s
+Ushroud_U0 = 0.2
+U_shroud = U0 * Ushroud_U0
 Q_shroud =U_shroud*(pi*(d_shroud)**2/4)     #m**3/s  caudal volumetrico
 Re_shroud = core.Reynolds(U0,d_shroud,atmos.rho,atmos.mu)
 Q_inlet = 2    #L/min  caudal volumetrico estipulado por Renard
@@ -53,25 +44,20 @@ diametros_micro = diametros_micro*10**-6
 # ----------------------------------------------------------------------------------------------------------------------
 # EFICIENCIA MUESTREO
 # aspiracion
-def n_asp(u_u0,dp,V,diam):
-    stokes = core.Stokes_number(V,dp,diam,rho_p,atmos.mu)
-    n_aspiracion =  1 + ((1/u_u0)-1)*(1-(1+stokes*(2+0.617*u_u0))**-1) #valido para 0.005 < stokes < 10
+def n_asp(u0_u,stokes):
+    n_aspiracion =  1 + (u0_u-1)*(1-(1+stokes*(2+0.617*(1/u0_u)))**-1) #valido para 0.005 < stokes < 2.03
+    # n_aspiracion =  1 + (u0_u-1)*(1-(1+3.77*stokes**(0.883))**-1) #valido para 0.005 < stokes < 10
     return n_aspiracion
 
 
+
 # transmision
-def n_trans(u_u0,dp,V,diam):
-    u0_u = 1/u_u0
-    stokes = core.Stokes_number(V, dp, diam, rho_p, atmos.mu)
+def n_trans(u0_u,stokes):
     n_transport_inert = (1 + (u0_u - 1) / (1 + 2.66 / stokes ** (2 / 3))) / (1 + (u0_u - 1) / (1 + 0.418 / stokes))
     return n_transport_inert
 
 # factor correccion Gong et al.
-def factor_corr(u_u0,dp,V,diam):
-    stokes = core.Stokes_number(V, dp, diam, rho_p, atmos.mu) #stokes del shroud
-    u0_u = 1/u_u0
-    if not 8900 <= Re_shroud <= 54000:
-        print('El valor del reynolds esta fuera del rango especificado por Gong.')
+def factor_corr(u0_u,stokes):
     factor = 1 - (u0_u-1)*0.861*stokes/(stokes*(2.34+0.939*(u0_u-1))+1)
     return factor
 
@@ -98,6 +84,22 @@ def Cc(dp, P, T):
     cc = 1 + 1*(15.60+7*np.exp(-0.059*P*dp))/(P*dp)
     return cc
 
+def stks(u, d, rho_p, dp, mu, P, T):
+    """
+
+    Args:
+        u: velocidad --> m/s
+        d: longitud de referencia --> m
+        rho_p: densidad de la particula --> kg/m**3
+        dp: diametro de la particula --> m
+        mu: viscosidad dinamica --> Pa.s
+        P: presion atmosferica --> Pa
+        T: temperatura ambiente --> K
+
+    Returns: numero de stokes
+
+    """
+    return tau_rel(rho_p, dp, mu, P, T) * u / d
 
 # .............................................
 # sedimentacion
@@ -162,7 +164,7 @@ def n_turb_inert(d,L,Q,re,V,dp):
 
     """
     stokes = core.Stokes_number(V, dp, d, rho_p, atmos.mu)
-    print(dp, stokes)
+    # print(dp, stokes)
     tau_mas = 0.0395*stokes*re**(3/4)
     if tau_mas > 12.9:
         V_mas = 0.1
@@ -191,13 +193,15 @@ inlet_eff_turb = []
 EFICIENCIAS_TOTAL = []
 FACTOR = []
 print('SHROUD')
+
 for dp in diametros_micro:
+    stokes_shroud = stks(U_shroud, d_shroud, rho_p,dp,atmos.mu,atmos.P,atmos.T )
     # FACTOR
-    FACTOR.append(factor_corr(U_U0,dp,U0,d_shroud))
+    FACTOR.append(factor_corr(1/Ushroud_U0,stokes_shroud))
     # ..............................................
     # SHROUD
-    shroud_eff_asp.append(n_asp(U_U0,dp,U0,d_shroud))
-    shroud_eff_transm.append(n_trans(U_U0,dp,U0,d_shroud))
+    shroud_eff_asp.append(n_asp(1/Ushroud_U0,stokes_shroud))
+    shroud_eff_transm.append(n_trans(1/Ushroud_U0,stokes_shroud))
     shroud_eff_diff.append(n_dif(dp,atmos.P,atmos.T,L_offset,Q_shroud,atmos.mu,Re_shroud,atmos.rho))
     shroud_eff_sed.append(n_sedim(d_shroud,L_offset,rho_p,dp,atmos.mu,atmos.P,atmos.T,Q_shroud,U_shroud,Re_shroud))
     shroud_eff_turb.append(n_turb_inert(d_shroud,L_offset,Q_shroud,Re_shroud,U_shroud,dp))
@@ -208,11 +212,12 @@ for dp in diametros_micro:
     # ..............................................
     # INLET
     if DOS_TRAMOS:
-        eff_aspiracion = n_asp(Uinlet_Ushroud, dp, U_inlet, d_inlet)
-        eff_transmision =n_trans(Uinlet_Ushroud, dp, U_inlet, d_inlet)
-        eff_diffusion = n_dif(dp, atmos.P, atmos.T, L_inlet_1, Q_inlet, atmos.mu, Re_inlet_1, atmos.rho)*n_dif(dp, atmos.P, atmos.T, L_inlet_2, Q_inlet, atmos.mu, Re_inlet_2, atmos.rho)
-        eff_sedimentacion = n_sedim(d_inlet_1, L_inlet_1, rho_p, dp, atmos.mu, atmos.P, atmos.T, Q_inlet, U_inlet, Re_inlet_1)*n_sedim(d_inlet_2, L_inlet_2, rho_p, dp, atmos.mu, atmos.P, atmos.T, Q_inlet, U_inlet, Re_inlet_2)
-        eff_turbulen = n_turb_inert(d_inlet_1, L_inlet_1, Q_inlet, Re_inlet, U_inlet, dp)*n_turb_inert(d_inlet_2, L_inlet_2, Q_inlet, Re_inlet, U_inlet, dp)
+        stokes_inlet = stks(U_inlet, d_inlet_1, rho_p, dp, atmos.mu, atmos.P, atmos.T)
+        eff_aspiracion = n_asp(1/Uinlet_Ushroud,stokes_inlet)
+        eff_transmision = n_trans(1/Uinlet_Ushroud, stokes_inlet)
+        eff_diffusion = n_dif(dp, atmos.P, atmos.T, L_inlet_1, Q_inlet, atmos.mu, Re_inlet_1, atmos.rho)*n_dif(dp, atmos.P, atmos.T, L_inlet_2, Q_inlet, atmos.mu, Re_inlet_1, atmos.rho)
+        eff_sedimentacion = n_sedim(d_inlet_1, L_inlet_1, rho_p, dp, atmos.mu, atmos.P, atmos.T, Q_inlet, U_inlet, Re_inlet_1)*n_sedim(d_inlet_2, L_inlet_2, rho_p, dp, atmos.mu, atmos.P, atmos.T, Q_inlet, U_inlet, Re_inlet_1)
+        eff_turbulen = n_turb_inert(d_inlet_1, L_inlet_1, Q_inlet, Re_inlet_1, U_inlet, dp)*n_turb_inert(d_inlet_2, L_inlet_2, Q_inlet, Re_inlet_1, U_inlet, dp)
 
         inlet_eff_asp.append(eff_aspiracion)
         inlet_eff_transm.append(eff_transmision)
@@ -328,11 +333,11 @@ eff_inlet = ax.plot(diametros_micro, EFICIENCIAS_INLET,label='EFICIENCIA TOTAL T
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_INLET,color='cyan')
 eff_shroud = ax.plot(diametros_micro, EFICIENCIAS_SHROUD,label='EFICIENCIA TOTAL ENVOLTURA',color='m',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_SHROUD,color='m')
-# eff_factor = ax.plot(diametros_micro, FACTOR,label='FACTOR',color='dimgray',marker='o',linestyle='',markersize=2)
-# fit_exp_curve(ax,diametros_micro,FACTOR,color='dimgray')
+eff_factor = ax.plot(diametros_micro, FACTOR,label='FACTOR',color='dimgray',marker='o',linestyle='',markersize=2)
+fit_exp_curve(ax,diametros_micro,FACTOR,color='dimgray')
 ax.set_xlim(0,55)
 ax.set_ylim(0,maximo)
-
+ax.legend(fontsize=15,markerscale=2,framealpha=1,loc=2)
 ax.grid()
 # ax.set_xlabel(r'Particle Diameter, dp [$\mu$m]')
 ax.set_xlabel(r'Diametro de Particula, dp [$\mu$m]')
@@ -364,25 +369,9 @@ FOLDER = '/home/maxpower/PycharmProjects/aerosol_inlet_efficiency/CFD_JUAN/'
 file = 'eff_{}ms.csv'.format(str(int(U0)))
 df = pd.read_csv(FOLDER + file)
 df = df.applymap(replace_comma_with_dot)
-plt.plot(df['x'],df['Curve1'],'crimson',label='SALDIA {}'.format(str(int(U0)) + ' m/s'),linestyle='--')
-ax.legend(fontsize=15,markerscale=2,framealpha=1,loc=2)
-# ----------------------------------------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------------------------------------
-fig3, ax = plt.subplots(1,1)
-
-FOLDER = '/home/maxpower/PycharmProjects/aerosol_inlet_efficiency/CFD_JUAN/'
-file = 'asp_{}.csv'.format(str(int(U0)))
-df = pd.read_csv(FOLDER + file)
-df = df.applymap(replace_comma_with_dot)
 plt.plot(df['x'],df['Curve1'],'y',label='SALDIA {}'.format(str(int(U0)) + ' m/s'),linestyle='--')
 
-plot_eff(ax,diametros_micro,shroud_eff_asp,'b','Asp. Envoltura')
 
-
-ax.legend(fontsize=15,markerscale=2,framealpha=1,loc=2)
-ax.grid()
-ax.set_xlabel(r'Diametro de Particula, dp [$\mu$m]')
-ax.set_ylabel(r'Eficiencia $\eta$')
 
 plt.show()
 print('done')
