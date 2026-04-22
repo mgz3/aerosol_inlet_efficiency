@@ -316,7 +316,7 @@ def _build_model_efficiency_table(cases, ranges_um):
             eta = np.interp(mid_um, case["model"]["dp_um"], case["model"]["muestreo"])
             row.append(f"{eta:.4f}")
         rows.append(row)
-    columns = ["Rango dp [um]"] + [f"U0={u} m/s" for u in speeds]
+    columns = ["Rango dp [µm]"] + [f"U0={u} m/s" for u in speeds]
     return columns, rows
 
 
@@ -372,9 +372,10 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
                 y_model,
                 label=f"{name} - Modelo",
                 color=color,
-                linewidth=2.8,
+                linewidth=8.0,
                 linestyle="-",
-                zorder=2,
+                alpha=0.5,
+                zorder=1,
             )
             model_lines[name] = line_model
             y_max.append(np.nanmax(y_model))
@@ -386,22 +387,21 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
                 y_plc,
                 label=f"{name} - PLC",
                 color=color,
-                linewidth=3.0,
-                # linestyle=(0, (8, 4)),
-                linestyle=':',
-                marker="x",
-                markersize=10,
-                markerfacecolor="white",
-                markeredgewidth=0.9,
-                markevery=3,
+                linewidth=4.0,
+                linestyle="--",
+                # marker="x",
+                # markersize=10,
+                # markerfacecolor="white",
+                # markeredgewidth=0.9,
+                # markevery=3,
                 alpha=1.0,
                 zorder=3,
             )
-            line_plc.set_path_effects([pe.Stroke(linewidth=4.2, foreground="white"), pe.Normal()])
+            # line_plc.set_path_effects([pe.Stroke(linewidth=4.2, foreground="white"), pe.Normal()])
             plc_lines[name] = line_plc
             y_max.append(np.nanmax(y_plc))
 
-    ax.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=20 * FONT_SCALE)
+    ax.set_xlabel("Diametro de partícula, $d_p$ [um]", fontsize=20 * FONT_SCALE)
     ax.set_ylabel("Eficiencia [-]", fontsize=20 * FONT_SCALE)
     ax.set_xscale("log")
     ax.set_xlim(SENSOR_DP_MIN_UM, SENSOR_DP_MAX_UM)
@@ -416,9 +416,9 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
     empty_cell = Line2D([], [], linestyle="None")
 
     model_handles_col = [header_model]
-    model_labels_col = [r"$\bf{Modelo}$"]
+    model_labels_col = ["Modelo"]
     plc_handles_col = [header_plc]
-    plc_labels_col = [r"$\bf{PLC}$"]
+    plc_labels_col = ["PLC"]
 
     for spec in compare_specs:
         name = spec["name"]
@@ -433,21 +433,44 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
     legend_main = ax.legend(
         legend_handles,
         legend_labels,
-        loc="upper left" if out_base == "comparacion_entrada_total_v2" else "best",
+        loc="upper left" if out_base == "comparacion_entrada_total_v2" else "lower left",
         frameon=True,
         fontsize=16 * FONT_SCALE,
-        ncol=2,
+        ncol=1,
         handlelength=2.6,
         columnspacing=1.6,
         handletextpad=0.8,
     )
+    legend_texts = legend_main.get_texts()
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    underline_idxs = [0]
+    if len(model_labels_col) < len(legend_texts):
+        underline_idxs.append(len(model_labels_col))
+    for idx in underline_idxs:
+        if idx < len(legend_texts):
+            text = legend_texts[idx]
+            text.set_fontweight("bold")
+            bbox = text.get_window_extent(renderer=renderer)
+            (x0, y0) = fig.transFigure.inverted().transform((bbox.x0, bbox.y0))
+            (x1, _) = fig.transFigure.inverted().transform((bbox.x1, bbox.y0))
+            y = fig.transFigure.inverted().transform((0.0, bbox.y0 - 1.5))[1]
+            fig.add_artist(
+                Line2D(
+                    [x0, x1],
+                    [y, y],
+                    transform=fig.transFigure,
+                    color=text.get_color(),
+                    linewidth=1.2,
+                )
+            )
     ax.add_artist(legend_main)
 
     legend_ranges = ax.legend(
         band_handles,
         band_labels,
-        title="Rangos sensor [um]",
-        loc="upper center" if out_base == "comparacion_entrada_total_v2" else "lower left",
+        title="Rangos sensor [µm]",
+        loc="upper center" if out_base == "comparacion_entrada_total_v2" else "lower center",
         frameon=True,
         fontsize=15 * FONT_SCALE,
         title_fontsize=17 * FONT_SCALE,
@@ -467,7 +490,7 @@ def plot_probe_efficiency(base_dir: Path, model, plc=None):
     # Figura 1: comparacion de entrada y eficiencia total de muestreo
     compare_specs_entrada_total = [
         {"name": "Entrada", "model_key": "entrada", "plc_key": "asp", "plc_to_eff": lambda y: y, "color": "#1f77b4"},
-        {"name": "Muestreo total", "model_key": "muestreo", "plc_key": "muestreo", "plc_to_eff": lambda y: y, "color": "#8c564b"},
+        {"name": "Muestreo", "model_key": "muestreo", "plc_key": "muestreo", "plc_to_eff": lambda y: y, "color": "#8c564b"},
     ]
     _plot_efficiency_group(
         base_dir,
