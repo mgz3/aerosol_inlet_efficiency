@@ -1,7 +1,7 @@
 from math import exp, sqrt, pi,cos,tan
 import matplotlib.pyplot as plt
 import numpy as np
-plt.style.use(['science','ieee'])
+# plt.style.use(['science','ieee'])
 fig, ax = plt.subplots()
 
 To = 288.15  # K
@@ -489,10 +489,10 @@ ax.set_xlim([0,50])
 ax.set_ylim([0,1])
 import os
 
-path = 'C:\\Users\\mauro\\Desktop\\'
-os.chdir(path)
+# path = 'C:\\Users\\mauro\\Desktop\\'
+# os.chdir(path)
 # fig.savefig('eff_diff_vel_{}ms.pdf'.format(v1))
-fig.savefig('eff_diff_ang_{}ms.jpg'.format(v1), dpi=300)
+# fig.savefig('eff_diff_ang_{}ms.jpg'.format(v1), dpi=300)
 # fig.savefig('eff_diff_vel.jpg', dpi=300)
 # fig.savefig('eff_altitude.pdf')
 # fig.savefig('eff_diff_vel.pdf')

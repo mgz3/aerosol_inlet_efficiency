@@ -46,7 +46,8 @@ U0 = 20 #m/s
 Q_inlet = 2    #L/min  caudal volumetrico estipulado por Renard
 Q_inlet = Q_inlet/60000    #m**3/s
 U_inlet = 4*Q_inlet/(d_inlet**2*pi)
-U0_Uinlet = U0/U_inlet 
+U0_Uinlet = U0/U_inlet
+print(1/U0_Uinlet)
 Re_inlet = core.Reynolds(U_inlet,d_inlet,atmos.rho,atmos.mu)
 Re_inlet1=Re_inlet
 DOS_TRAMOS = True
@@ -265,7 +266,7 @@ def fit_exp_curve_exp(ax,t,k,color):
 
 
 fig1, ax = plt.subplots(1,1)
-plt.style.use(['science','ieee'])
+# plt.style.use(['science','ieee'])
 ax.plot([0,50],[1,1],linestyle='dashed',color='gray')
 eff_inlet = ax.plot(diametros_micro, EFICIENCIAS_INLET,label='Sonda de muestreo',color='k',marker='o',linestyle='',markersize=2)
 fit_exp_curve(ax,diametros_micro,EFICIENCIAS_INLET,color='k')

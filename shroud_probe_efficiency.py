@@ -360,7 +360,7 @@ def replace_comma_with_dot(x):
         return float(x.replace(",", "."))
     except:
         return x
-FOLDER = '/home/maxpower/PycharmProjects/aerosol_inlet_efficiency/CFD_JUAN/'
+FOLDER = './CFD_JUAN/'
 file = 'eff_{}ms.csv'.format(str(int(U0)))
 df = pd.read_csv(FOLDER + file)
 df = df.applymap(replace_comma_with_dot)
@@ -370,7 +370,7 @@ ax.legend(fontsize=15,markerscale=2,framealpha=1,loc=2)
 # ----------------------------------------------------------------------------------------------------------------------
 fig3, ax = plt.subplots(1,1)
 
-FOLDER = '/home/maxpower/PycharmProjects/aerosol_inlet_efficiency/CFD_JUAN/'
+FOLDER = './CFD_JUAN/'
 file = 'asp_{}.csv'.format(str(int(U0)))
 df = pd.read_csv(FOLDER + file)
 df = df.applymap(replace_comma_with_dot)

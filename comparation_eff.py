@@ -365,7 +365,7 @@ def replace_comma_with_dot(x):
         return float(x.replace(",", "."))
     except:
         return x
-FOLDER = '/home/maxpower/PycharmProjects/aerosol_inlet_efficiency/CFD_JUAN/'
+FOLDER = './CFD_JUAN/'
 file = 'eff_{}ms.csv'.format(str(int(U0)))
 df = pd.read_csv(FOLDER + file)
 df = df.applymap(replace_comma_with_dot)

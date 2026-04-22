@@ -2,7 +2,7 @@ from math import exp, sqrt, pi,cos
 import matplotlib.pyplot as plt
 import numpy as np
 
-plt.style.use(['science','ieee'])
+# plt.style.use(['science','ieee'])
 fig, ax = plt.subplots()
 
 To = 288.15  # K

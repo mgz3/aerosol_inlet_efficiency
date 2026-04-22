@@ -1,7 +1,7 @@
 from math import exp, sqrt, pi,cos,tan
 import matplotlib.pyplot as plt
 import numpy as np
-plt.style.use(['science','ieee'])
+# plt.style.use(['science','ieee'])
 fig, ax = plt.subplots()
 
 To = 288.15  # K
@@ -501,8 +501,8 @@ ax.set_ylabel(r'Efficiency $\eta$',fontsize=10)
 ax.legend(loc='upper right', fontsize=8,ncol=2)
 ax.grid()
 import os
-path = 'C:\\Users\\mauro\\Desktop\\'
-os.chdir(path)
-fig.savefig('eff_altitude.pdf')
-fig.savefig('eff_altitude.jpg', dpi=300)
+# path = 'C:\\Users\\mauro\\Desktop\\'
+# os.chdir(path)
+# fig.savefig('eff_altitude.pdf')
+# fig.savefig('eff_altitude.jpg', dpi=300)
 plt.show()

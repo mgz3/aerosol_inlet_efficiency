@@ -1,7 +1,7 @@
 from math import exp, sqrt, pi,cos
 import matplotlib.pyplot as plt
 import numpy as np
-plt.style.use(['science','ieee'])
+# plt.style.use(['science','ieee'])
 
 To = 288.15  # K
 alpha_T = 6.5 * 10 ** -3  # K/m
