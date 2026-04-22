@@ -4,20 +4,14 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="eb6d1064-4726-4137-b4ea-0f67f0c93668" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/analisis_discrepancia_muestreo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/parameters_test.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/validation_eff_method_with_PLC_v2.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/validation_eff_method_with_PLC_v2_shroud.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/aerosol_inlet_efficiency.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/aerosol_inlet_efficiency.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/comparation_eff.py" beforeDir="false" afterPath="$PROJECT_DIR$/comparation_eff.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inlet_aerosol_efficiciency.py" beforeDir="false" afterPath="$PROJECT_DIR$/inlet_aerosol_efficiciency.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inlet_effic_sistematic_codo.py" beforeDir="false" afterPath="$PROJECT_DIR$/inlet_effic_sistematic_codo.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inlet_effic_sistematic_height.py" beforeDir="false" afterPath="$PROJECT_DIR$/inlet_effic_sistematic_height.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inlet_efficiency_wihtout_elbow.py" beforeDir="false" afterPath="$PROJECT_DIR$/inlet_efficiency_wihtout_elbow.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prueba_eff_codo_sola.py" beforeDir="false" afterPath="$PROJECT_DIR$/prueba_eff_codo_sola.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shroud_probe_efficiency.py" beforeDir="false" afterPath="$PROJECT_DIR$/shroud_probe_efficiency.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/validation_eff_method_with_PLC.py" beforeDir="false" afterPath="$PROJECT_DIR$/validation_eff_method_with_PLC.py" afterDir="false" />
+    <list default="true" id="eb6d1064-4726-4137-b4ea-0f67f0c93668" name="Changes" comment="New data">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comparacion_eficiencias_transporte_v2.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/comparacion_eficiencias_transporte_v2.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comparacion_eficiencias_transporte_v2.png" beforeDir="false" afterPath="$PROJECT_DIR$/comparacion_eficiencias_transporte_v2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comparacion_entrada_total_v2.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/comparacion_entrada_total_v2.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comparacion_entrada_total_v2.png" beforeDir="false" afterPath="$PROJECT_DIR$/comparacion_entrada_total_v2.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tabla_eficiencia_modelo_rangos_v2.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/tabla_eficiencia_modelo_rangos_v2.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/validation_eff_method_with_PLC_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/validation_eff_method_with_PLC_v2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -169,16 +163,38 @@
       <workItem from="1776686086198" duration="9805000" />
       <workItem from="1776770183625" duration="866000" />
       <workItem from="1776773039771" duration="10041000" />
-      <workItem from="1776788046293" duration="17061000" />
+      <workItem from="1776788046293" duration="21071000" />
     </task>
+    <task id="LOCAL-00001" summary="New code for eff - revised">
+      <option name="closed" value="true" />
+      <created>1776860692290</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1776860692290</updated>
+    </task>
+    <task id="LOCAL-00002" summary="New data">
+      <option name="closed" value="true" />
+      <created>1776860734610</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1776860734610</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="New code for eff - revised" />
+    <MESSAGE value="New data" />
+    <option name="LAST_COMMIT_MESSAGE" value="New data" />
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/aerosol_inlet_efficiency$analisis_discrepancia_muestreo.coverage" NAME="analisis_discrepancia_muestreo Coverage Results" MODIFIED="1776689006141" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/aerosol_inlet_efficiency$validation_eff_method_with_PLC_v2.coverage" NAME="validation_eff_method_with_PLC_v2 Coverage Results" MODIFIED="1776860185149" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/aerosol_inlet_efficiency$validation_eff_method_with_PLC_v2.coverage" NAME="validation_eff_method_with_PLC_v2 Coverage Results" MODIFIED="1776864524328" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/aerosol_inlet_efficiency$validation_eff_method_with_PLC_v2_shroud.coverage" NAME="validation_eff_method_with_PLC_v2_shroud Coverage Results" MODIFIED="1776857846276" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="github-copilot-workspace">

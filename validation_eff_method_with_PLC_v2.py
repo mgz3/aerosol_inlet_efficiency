@@ -7,29 +7,14 @@ from fluids import ATMOSPHERE_1976, core
 from matplotlib import patheffects as pe
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 import scienceplots
 
 
-plt.style.use(["science", "no-latex"])
-plt.rcParams.update(
-    {
-        "figure.dpi": 180,
-        "savefig.dpi": 600,
-        "font.size": 14,
-        "axes.labelsize": 18,
-        "axes.titlesize": 20,
-        "legend.fontsize": 14,
-        "xtick.labelsize": 14,
-        "ytick.labelsize": 14,
-        "lines.linewidth": 2.4,
-        "axes.linewidth": 1.2,
-        "font.family": "serif",
-    }
-)
-
 K_BOLTZMANN = 1.380649e-23
 G = 9.81
+FONT_SCALE = 1.4
 TABLE_PARTICLE_RANGES_UM = [
     (0.2, 0.3),
     (0.3, 0.4),
@@ -52,6 +37,43 @@ TABLE_PARTICLE_RANGES_UM = [
     (30.0, 40.0),
     (40.0, 50.0),
 ]
+SENSOR_DP_MIN_UM = min(low for low, _ in TABLE_PARTICLE_RANGES_UM)
+SENSOR_DP_MAX_UM = max(high for _, high in TABLE_PARTICLE_RANGES_UM)
+
+plt.style.use(["science", "no-latex"])
+plt.rcParams.update(
+    {
+        "figure.dpi": 180,
+        "savefig.dpi": 600,
+        "font.size": 14 * FONT_SCALE,
+        "axes.labelsize": 18 * FONT_SCALE,
+        "axes.titlesize": 20 * FONT_SCALE,
+        "legend.fontsize": 16 * FONT_SCALE,
+        "xtick.labelsize": 14 * FONT_SCALE,
+        "ytick.labelsize": 14 * FONT_SCALE,
+        "xtick.major.size": 6 * FONT_SCALE,
+        "ytick.major.size": 6 * FONT_SCALE,
+        "xtick.minor.size": 3 * FONT_SCALE,
+        "ytick.minor.size": 3 * FONT_SCALE,
+        "xtick.major.width": 1.2 * FONT_SCALE,
+        "ytick.major.width": 1.2 * FONT_SCALE,
+        "xtick.minor.width": 0.8 * FONT_SCALE,
+        "ytick.minor.width": 0.8 * FONT_SCALE,
+        "lines.linewidth": 2.4,
+        "axes.linewidth": 1.2,
+        "font.family": "serif",
+    }
+)
+
+
+def _style_axis_ticks(ax):
+    ax.tick_params(
+        axis="both",
+        which="both",
+        labelsize=14 * FONT_SCALE,
+        length=6 * FONT_SCALE,
+        width=1.0 * FONT_SCALE,
+    )
 
 
 def _to_float_series(series):
@@ -304,7 +326,7 @@ def export_model_efficiency_table_pdf(base_dir: Path, cases):
     ax.axis("off")
     table = ax.table(cellText=rows, colLabels=columns, loc="center", cellLoc="center")
     table.auto_set_font_size(False)
-    table.set_fontsize(10)
+    table.set_fontsize(10 * FONT_SCALE)
     table.scale(1.0, 1.25)
 
     for (r, c), cell in table.get_celld().items():
@@ -319,6 +341,18 @@ def export_model_efficiency_table_pdf(base_dir: Path, cases):
 
 def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out_base):
     fig, ax = plt.subplots(1, 1, figsize=(16, 10), constrained_layout=True)
+
+    ax.axhline(1.0, color="#808080", linewidth=1.2, alpha=0.75, zorder=-1)
+
+    # Bandas de tamaño de partícula medidas por el sensor.
+    cmap = plt.get_cmap("tab20")
+    range_colors = [cmap(i) for i in np.linspace(0, 1, len(TABLE_PARTICLE_RANGES_UM))]
+    band_handles = []
+    band_labels = []
+    for (low_um, high_um), band_color in zip(TABLE_PARTICLE_RANGES_UM, range_colors):
+        ax.axvspan(low_um, high_um, color=band_color, alpha=0.12, zorder=0)
+        band_handles.append(Patch(facecolor=band_color, edgecolor="none", alpha=0.35))
+        band_labels.append(f"{low_um:g}-{high_um:g}")
 
     y_max = []
     model_lines = {}
@@ -353,7 +387,8 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
                 label=f"{name} - PLC",
                 color=color,
                 linewidth=3.0,
-                linestyle=(0, (8, 4)),
+                # linestyle=(0, (8, 4)),
+                linestyle=':',
                 marker="x",
                 markersize=10,
                 markerfacecolor="white",
@@ -366,10 +401,12 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
             plc_lines[name] = line_plc
             y_max.append(np.nanmax(y_plc))
 
-    ax.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=20)
-    ax.set_ylabel("Eficiencia [-]", fontsize=20)
-    ax.set_title(title, fontsize=18)
-    ax.grid(True, linestyle="--", linewidth=0.9, alpha=0.35, which="both")
+    ax.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=20 * FONT_SCALE)
+    ax.set_ylabel("Eficiencia [-]", fontsize=20 * FONT_SCALE)
+    ax.set_xscale("log")
+    ax.set_xlim(SENSOR_DP_MIN_UM, SENSOR_DP_MAX_UM)
+    ax.grid(True, axis="y", linestyle="--", linewidth=0.9, alpha=0.35)
+    _style_axis_ticks(ax)
 
     # Leyenda tabular en dos columnas: Modelo | PLC.
     # Matplotlib llena por columnas, por eso se arma primero toda la columna Modelo
@@ -393,17 +430,31 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
     legend_handles = model_handles_col + plc_handles_col
     legend_labels = model_labels_col + plc_labels_col
 
-    ax.legend(
+    legend_main = ax.legend(
         legend_handles,
         legend_labels,
-        loc="best",
+        loc="upper left" if out_base == "comparacion_entrada_total_v2" else "best",
         frameon=True,
-        fontsize=12,
+        fontsize=16 * FONT_SCALE,
         ncol=2,
         handlelength=2.6,
         columnspacing=1.6,
         handletextpad=0.8,
     )
+    ax.add_artist(legend_main)
+
+    legend_ranges = ax.legend(
+        band_handles,
+        band_labels,
+        title="Rangos sensor [um]",
+        loc="upper center" if out_base == "comparacion_entrada_total_v2" else "lower left",
+        frameon=True,
+        fontsize=15 * FONT_SCALE,
+        title_fontsize=17 * FONT_SCALE,
+        ncol=2,
+        borderaxespad=0.35,
+    )
+    legend_ranges.get_title().set_fontweight("bold")
     if y_max:
         ax.set_ylim(0, max(y_max) * 1.08)
 
@@ -423,7 +474,8 @@ def plot_probe_efficiency(base_dir: Path, model, plc=None):
         model,
         plc,
         compare_specs_entrada_total,
-        "Comparacion de eficiencia de entrada y total (Modelo vs PLC New)",
+        # "Comparacion de eficiencia de entrada y total (Modelo vs PLC New)",
+        "",
         "comparacion_entrada_total_v2",
     )
 
@@ -480,11 +532,11 @@ def plot_relative_difference_muestreo(base_dir: Path, model, plc=None):
     ax.axhline(0.0, color="k", linestyle="--", linewidth=1.6, alpha=0.7)
     # ax.set_xscale("log")
     # ax.set_xlim(x_min, x_max)
-    ax.set_xlabel("Diámetro de partícula, $d_p$ [µm]", fontsize=16)
-    ax.set_ylabel("Diferencia relativa [%]", fontsize=16)
-    ax.set_title("Diferencia relativa porcentual de muestreo (PLC vs Modelo)", fontsize=14)
-    ax.grid(True, linestyle="--", linewidth=0.7, alpha=0.30, which="both")
-    ax.legend(loc="best", frameon=True, fontsize=9)
+    ax.set_xlabel("Diámetro de partícula, $d_p$ [µm]", fontsize=16 * FONT_SCALE)
+    ax.set_ylabel("Diferencia relativa [%]", fontsize=16 * FONT_SCALE)
+    ax.grid(True, axis="y", linestyle="--", linewidth=0.7, alpha=0.30)
+    _style_axis_ticks(ax)
+    ax.legend(loc="best", frameon=True, fontsize=9 * FONT_SCALE)
 
     out_base = "diferencia_relativa_muestreo_v2"
     fig.savefig(base_dir / f"{out_base}.png", bbox_inches="tight")
@@ -532,5 +584,5 @@ def main(show=True):
 
 
 if __name__ == "__main__":
-    main(show=True)
+    main(show=False)
 
