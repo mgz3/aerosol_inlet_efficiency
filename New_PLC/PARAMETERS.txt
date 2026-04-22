@@ -1,0 +1,23 @@
+aspiration_angle = 0
+diameter = 8 #  mm
+Q = 2 # L/min
+V0 = 15 # m/s
+
+Sections Number: 2
+------------------
+1)
+Q1 = 2 # L/min
+L1 = 25 # mm
+diameter_1 = 8 # mm
+angle_curv = 0
+.................
+2)
+Q2 = 2 # L/min
+L2 = 10 # mm
+diameter_1 = 8 # mm
+angle_curv = 0
+
+
+
+Notes:
+En la digitalizacion se dividio el eje y en 100 para que no quede en porcentaje
