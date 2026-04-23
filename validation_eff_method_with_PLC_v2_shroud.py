@@ -478,7 +478,7 @@ def plot_total_sampling_figure(base_dir: Path, cases):
     ax_top.add_artist(sensor_legend)
     ax_bottom.legend(loc="lower left", frameon=True, fontsize=14 * fs, ncol=4)
 
-    out_base = "eficiencia_sonda_envuelta_total_v2_shroud"
+    out_base = "eficiencia_sonda_envuelta_muestreo_dif_vel"
     fig.savefig(base_dir / f"{out_base}.png", bbox_inches="tight")
     fig.savefig(base_dir / f"{out_base}.pdf", bbox_inches="tight")
     print(f"✓ Graficos guardados: {out_base}.png y .pdf")
@@ -511,7 +511,7 @@ def plot_aspiration_subplots(base_dir: Path, cases):
     fig.supxlabel("Diametro de particula, $d_p$ [µm]", fontsize=18 * fs)
     fig.supylabel("Eficiencia de Entrada [-]", fontsize=18 * fs)
 
-    out_base = "eficiencia_sonda_envuelta_aspiracion_v2_shroud"
+    out_base = "eficiencia_sonda_envuelta_entrada"
     fig.savefig(base_dir / f"{out_base}.png", bbox_inches="tight")
     fig.savefig(base_dir / f"{out_base}.pdf", bbox_inches="tight")
     print(f"✓ Graficos guardados: {out_base}.png y .pdf")
@@ -545,12 +545,12 @@ def export_model_efficiency_table_pdf(base_dir: Path, cases):
             cell.set_text_props(weight="bold")
             cell.set_facecolor("#E8E8E8")
 
-    out_name = "tabla_eficiencia_modelo_rangos_v2_shroud.pdf"
+    out_name = "tabla_eficiencia_modelo_rangos_shroud.pdf"
     fig.savefig(base_dir / out_name, bbox_inches="tight")
     print(f"✓ Tabla PDF guardada: {out_name}")
 
 
-def main(show=True):
+def main(show=False):
     base_dir = Path(__file__).resolve().parent
     atmos = ATMOSPHERE_1976(100)
 
@@ -571,5 +571,5 @@ def main(show=True):
 
 
 if __name__ == "__main__":
-    main(show=True)
+    main(show=False)
 

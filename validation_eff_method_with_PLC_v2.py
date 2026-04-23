@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from fluids import ATMOSPHERE_1976, core
-from matplotlib import patheffects as pe
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -334,7 +333,7 @@ def export_model_efficiency_table_pdf(base_dir: Path, cases):
             cell.set_text_props(weight="bold")
             cell.set_facecolor("#E8E8E8")
 
-    out_name = "tabla_eficiencia_modelo_rangos_v2.pdf"
+    out_name = "tabla_eficiencia_modelo_rangos_curvada.pdf"
     fig.savefig(base_dir / out_name, bbox_inches="tight")
     print(f"✓ Tabla PDF guardada: {out_name}")
 
@@ -433,7 +432,7 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
     legend_main = ax.legend(
         legend_handles,
         legend_labels,
-        loc="upper left" if out_base == "comparacion_entrada_total_v2" else "lower left",
+        loc="upper left" if out_base == "comparacion_entrada_total_sonda_curvada" else "lower left",
         frameon=True,
         fontsize=16 * FONT_SCALE,
         ncol=1,
@@ -470,7 +469,7 @@ def _plot_efficiency_group(base_dir: Path, model, plc, compare_specs, title, out
         band_handles,
         band_labels,
         title="Rangos sensor [µm]",
-        loc="upper center" if out_base == "comparacion_entrada_total_v2" else "lower center",
+        loc="upper center" if out_base == "comparacion_entrada_total_sonda_curvada" else "lower center",
         frameon=True,
         fontsize=15 * FONT_SCALE,
         title_fontsize=17 * FONT_SCALE,
@@ -499,7 +498,7 @@ def plot_probe_efficiency(base_dir: Path, model, plc=None):
         compare_specs_entrada_total,
         # "Comparacion de eficiencia de entrada y total (Modelo vs PLC New)",
         "",
-        "comparacion_entrada_total_v2",
+        "comparacion_entrada_total_sonda_curvada",
     )
 
     # Figura 2: todas las eficiencias de transporte
@@ -521,8 +520,64 @@ def plot_probe_efficiency(base_dir: Path, model, plc=None):
         plc,
         compare_specs_transporte,
         "Comparacion de eficiencias de transporte (Modelo vs PLC New)",
-        "comparacion_eficiencias_transporte_v2",
+        "comparacion_eficiencias_transporte_sonda_curvada",
     )
+
+
+def plot_sampling_efficiency_multi_speed(base_dir: Path, cases):
+    fig, ax = plt.subplots(1, 1, figsize=(16, 10), constrained_layout=True)
+
+    ax.axhline(1.0, color="#808080", linewidth=1.2, alpha=0.75, zorder=-1)
+
+    cmap = plt.get_cmap("tab20")
+    range_colors = [cmap(i) for i in np.linspace(0, 1, len(TABLE_PARTICLE_RANGES_UM))]
+    band_handles = []
+    band_labels = []
+    for (low_um, high_um), band_color in zip(TABLE_PARTICLE_RANGES_UM, range_colors):
+        ax.axvspan(low_um, high_um, color=band_color, alpha=0.12, zorder=0)
+        band_handles.append(Patch(facecolor=band_color, edgecolor="none", alpha=0.35))
+        band_labels.append(f"{low_um:g}-{high_um:g}")
+
+    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+    for case, color in zip(cases, colors):
+        u0 = case["U0"]
+        model = case["model"]
+        ax.plot(
+            model["dp_um"],
+            model["muestreo"],
+            label=f"U0 = {u0:g} m/s",
+            color=color,
+            linewidth=3.0,
+        )
+
+    ax.set_xlabel("Diámetro de partícula, $d_p$ [µm]", fontsize=20 * FONT_SCALE)
+    ax.set_ylabel("Eficiencia total de muestreo [-]", fontsize=20 * FONT_SCALE)
+    ax.set_xscale("log")
+    ax.set_xlim(SENSOR_DP_MIN_UM, SENSOR_DP_MAX_UM)
+    # ax.set_ylim(0, 1.05)
+    ax.grid(True, axis="y", linestyle="--", linewidth=0.9, alpha=0.35)
+    _style_axis_ticks(ax)
+
+    legend_main = ax.legend(loc="upper left", frameon=True, fontsize=16 * FONT_SCALE)
+    ax.add_artist(legend_main)
+
+    legend_ranges = ax.legend(
+        band_handles,
+        band_labels,
+        title="Rangos sensor [µm]",
+        loc="upper center",
+        frameon=True,
+        fontsize=15 * FONT_SCALE,
+        title_fontsize=17 * FONT_SCALE,
+        ncol=2,
+        borderaxespad=0.35,
+    )
+    legend_ranges.get_title().set_fontweight("bold")
+
+    out_base = "eficiencia_total_muestreo_multivelocidad"
+    fig.savefig(base_dir / f"{out_base}.png", bbox_inches="tight")
+    fig.savefig(base_dir / f"{out_base}.pdf", bbox_inches="tight")
+    print(f"✓ Grafico guardado: {out_base}.png y .pdf")
 
 
 def plot_relative_difference_muestreo(base_dir: Path, model, plc=None):
@@ -593,10 +648,11 @@ def main(show=True):
     print("  x Diferencias en digitalizacion/normalizacion de los datos PLC\n")
 
     plot_probe_efficiency(base_dir, model, plc=plc)
-    # plot_relative_difference_muestreo(base_dir, model, plc=plc)
-
     table_speeds = [8.0, 11.0, 14.0, 25.0]
     table_cases = [{"U0": u0, "model": compute_two_stage_curved_probe(atmos, U0=u0, verbose=False)} for u0 in table_speeds]
+    plot_sampling_efficiency_multi_speed(base_dir, table_cases)
+    # plot_relative_difference_muestreo(base_dir, model, plc=plc)
+
     export_model_efficiency_table_pdf(base_dir, table_cases)
 
     print(f"{'='*70}\n")
