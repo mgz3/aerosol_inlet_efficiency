@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 from fluids import ATMOSPHERE_1976, core
 from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 import scienceplots  # noqa: F401
 
@@ -30,6 +32,9 @@ K_BOLTZMANN = 1.380649e-23
 G = 9.81
 DIFF_REL_PLOT_MAX_UM = 30.0
 DIFF_REL_PLOT_YLIM_PERCENT = 20.0
+# Escala de fuente independiente por figura (1.0 = tamaño actual).
+FONT_SCALE_TOTAL_FIG = 1.2
+FONT_SCALE_ASP_FIG = 1.5
 TABLE_PARTICLE_RANGES_UM = [
     (0.2, 0.3),
     (0.3, 0.4),
@@ -52,6 +57,10 @@ TABLE_PARTICLE_RANGES_UM = [
     (30.0, 40.0),
     (40.0, 50.0),
 ]
+SENSOR_DP_MIN_UM = min(low for low, _ in TABLE_PARTICLE_RANGES_UM)
+SENSOR_DP_MAX_UM = max(high for _, high in TABLE_PARTICLE_RANGES_UM)
+SENSOR_RANGE_FILL_ALPHA = 0.12
+SENSOR_RANGE_LEGEND_ALPHA = 0.35
 
 
 def n_asp(u0_u, stokes):
@@ -312,10 +321,41 @@ def compute_shroud_probe(atmos, U0):
     }
 
 
-def _style_common_axes(ax):
+def _style_common_axes(ax, add_ref_line=True):
     ax.set_xscale("log")
-    ax.axhline(1.0, color="#808080", linewidth=1.2, alpha=0.8)
+    if add_ref_line:
+        ax.axhline(1.0, color="#808080", linewidth=1.2, alpha=0.8)
     ax.grid(True, linestyle="--", linewidth=0.8, alpha=0.35, which="both")
+
+
+def _sensor_range_colors():
+    cmap = plt.get_cmap("tab20")
+    return [cmap(i) for i in np.linspace(0, 1, len(TABLE_PARTICLE_RANGES_UM))]
+
+
+def _add_sensor_range_background(ax):
+    for (low_um, high_um), band_color in zip(TABLE_PARTICLE_RANGES_UM, _sensor_range_colors()):
+        band_color = (float(band_color[0]), float(band_color[1]), float(band_color[2]), float(band_color[3]))
+        ax.fill_between(
+            [low_um, high_um],
+            0,
+            1,
+            transform=ax.get_xaxis_transform(),
+            color=band_color,
+            alpha=SENSOR_RANGE_FILL_ALPHA,
+            linewidth=0,
+            zorder=0,
+        )
+
+
+def _build_sensor_range_legend_handles():
+    handles = []
+    labels = []
+    for (low_um, high_um), band_color in zip(TABLE_PARTICLE_RANGES_UM, _sensor_range_colors()):
+        band_color = (float(band_color[0]), float(band_color[1]), float(band_color[2]), float(band_color[3]))
+        handles.append(Patch(facecolor=band_color, edgecolor="none", alpha=SENSOR_RANGE_LEGEND_ALPHA))
+        labels.append(f"{low_um:g}-{high_um:g}")
+    return handles, labels
 
 
 def _relative_difference_percent(x_model, model_values, x_cfd, cfd_values):
@@ -330,6 +370,7 @@ def _relative_difference_percent(x_model, model_values, x_cfd, cfd_values):
 
 
 def plot_total_sampling_figure(base_dir: Path, cases):
+    fs = FONT_SCALE_TOTAL_FIG
     fig, (ax_top, ax_bottom) = plt.subplots(
         2,
         1,
@@ -339,20 +380,33 @@ def plot_total_sampling_figure(base_dir: Path, cases):
         gridspec_kw={"height_ratios": [2.2, 1.0]},
     )
 
+    model_lines = {}
+    plc_lines = {}
+
+    _add_sensor_range_background(ax_top)
+    _add_sensor_range_background(ax_bottom)
+
     for case, color in zip(cases, ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]):
-        ax_top.plot(case["model"]["dp_um"], case["model"]["total_corr"], color=color, linewidth=2.4, label=f"Modelo {case['U0']:.0f} m/s")
+        speed_lbl = f"{int(round(case['U0']))} m/s"
+        (line_model,) = ax_top.plot(
+            case["model"]["dp_um"],
+            case["model"]["total_corr"],
+            color=color,
+            linewidth=6.0,
+            linestyle="-",
+            alpha=0.5,
+        )
+        model_lines[speed_lbl] = line_model
         if case["cfd_sampling"] is not None:
-            ax_top.plot(
+            (line_plc,) = ax_top.plot(
                 case["cfd_sampling"]["dp_um"],
                 case["cfd_sampling"]["eta"],
                 color=color,
-                linewidth=2.0,
-                marker="x",
-                markersize=5,
-                markeredgewidth=1.2,
-                markevery=3,
-                label=f"CFD {case['U0']:.0f} m/s",
+                linewidth=3.0,
+                linestyle="--",
+                alpha=1.0,
             )
+            plc_lines[speed_lbl] = line_plc
             rel_diff = _relative_difference_percent(
                 case["model"]["dp_um"],
                 case["model"]["total_corr"],
@@ -363,14 +417,66 @@ def plot_total_sampling_figure(base_dir: Path, cases):
             ax_bottom.plot(case["model"]["dp_um"], rel_diff, color=color, linewidth=2.4, label=f"{case['U0']:.0f} m/s")
 
     _style_common_axes(ax_top)
-    _style_common_axes(ax_bottom)
+    _style_common_axes(ax_bottom, add_ref_line=False)
+    ax_top.set_xlim(SENSOR_DP_MIN_UM, SENSOR_DP_MAX_UM)
+    ax_bottom.set_xlim(SENSOR_DP_MIN_UM, SENSOR_DP_MAX_UM)
+    ax_top.tick_params(axis="both", which="major", labelsize=16 * fs, length=6 * fs, width=1.0 * fs)
+    ax_top.tick_params(axis="both", which="minor", length=3.5 * fs, width=0.8 * fs)
+    ax_bottom.tick_params(axis="both", which="major", labelsize=16 * fs, length=6 * fs, width=1.0 * fs)
+    ax_bottom.tick_params(axis="both", which="minor", length=3.5 * fs, width=0.8 * fs)
     ax_bottom.axhline(0.0, color="#808080", linewidth=1.2, alpha=0.8)
     ax_bottom.set_ylim(-DIFF_REL_PLOT_YLIM_PERCENT, DIFF_REL_PLOT_YLIM_PERCENT)
-    ax_top.set_ylabel("Eficiencia de muestreo total [-]", fontsize=18)
-    ax_bottom.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=18)
-    ax_bottom.set_ylabel("Dif. rel. [%]", fontsize=16)
-    ax_top.legend(loc="best", frameon=True, fontsize=11, ncol=2)
-    ax_bottom.legend(loc="best", frameon=True, fontsize=10, ncol=4)
+    ax_top.set_ylabel("Eficiencia de muestreo [-]", fontsize=18 * fs)
+    ax_bottom.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=18 * fs)
+    ax_bottom.set_ylabel("Dif. rel. [%]", fontsize=16 * fs)
+
+    # Leyenda tabular en dos columnas: Modelo | PLC.
+    underline = lambda s: "".join(ch + "\u0332" for ch in s)
+    header_model = Line2D([], [], linestyle="None")
+    header_plc = Line2D([], [], linestyle="None")
+    empty = Line2D([], [], linestyle="None")
+    model_handles_col = [header_model]
+    model_labels_col = [underline("Modelo")]
+    plc_handles_col = [header_plc]
+    plc_labels_col = [underline("PLC")]
+    for case in cases:
+        speed_lbl = f"{int(round(case['U0']))} m/s"
+        model_handles_col.append(model_lines.get(speed_lbl, empty))
+        model_labels_col.append(speed_lbl if speed_lbl in model_lines else " ")
+        plc_handles_col.append(plc_lines.get(speed_lbl, empty))
+        plc_labels_col.append(speed_lbl if speed_lbl in plc_lines else " ")
+
+    legend_handles = model_handles_col + plc_handles_col
+    legend_labels = model_labels_col + plc_labels_col
+    ax_top.legend(
+        legend_handles,
+        legend_labels,
+        loc="upper left",
+        frameon=True,
+        fontsize=16 * fs,
+        ncol=2,
+        handlelength=2.8,
+        columnspacing=1.4,
+        handletextpad=0.8,
+    )
+    sensor_handles, sensor_labels = _build_sensor_range_legend_handles()
+    sensor_legend = ax_top.legend(
+        sensor_handles,
+        sensor_labels,
+        title="Rangos sensor [µm]",
+        loc="lower left",
+        frameon=True,
+        fontsize=14 * fs,
+        title_fontsize=15 * fs,
+        ncol=3,
+        handlelength=1.8,
+        columnspacing=1.2,
+        handletextpad=0.6,
+        borderaxespad=0.35,
+    )
+    sensor_legend.get_title().set_fontweight("bold")
+    ax_top.add_artist(sensor_legend)
+    ax_bottom.legend(loc="lower left", frameon=True, fontsize=14 * fs, ncol=4)
 
     out_base = "eficiencia_sonda_envuelta_total_v2_shroud"
     fig.savefig(base_dir / f"{out_base}.png", bbox_inches="tight")
@@ -379,7 +485,9 @@ def plot_total_sampling_figure(base_dir: Path, cases):
 
 
 def plot_aspiration_subplots(base_dir: Path, cases):
+    fs = FONT_SCALE_ASP_FIG
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), constrained_layout=True)
+    fig.set_constrained_layout_pads(w_pad=0.02, h_pad=0.02, wspace=0.02, hspace=0.02)  # type: ignore[attr-defined]
     axes = axes.ravel()
 
     for ax, case in zip(axes, cases):
@@ -391,17 +499,17 @@ def plot_aspiration_subplots(base_dir: Path, cases):
                 case["cfd_aspiration"]["eta"],
                 color="#000000",
                 linewidth=2.0,
-                marker="x",
-                markersize=5,
-                markeredgewidth=1.2,
-                markevery=3,
                 label="CFD",
             )
         _style_common_axes(ax)
-        ax.text(0.05, 0.92, f"U0 = {case['U0']:.0f} m/s", transform=ax.transAxes, fontsize=12)
-        ax.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=14)
-        ax.set_ylabel("Eficiencia de aspiracion [-]", fontsize=14)
-        ax.legend(loc="best", frameon=True, fontsize=10)
+        ax.set_xlim(SENSOR_DP_MIN_UM, SENSOR_DP_MAX_UM)
+        ax.tick_params(axis="both", which="major", labelsize=15 * fs, length=6 * fs, width=1.0 * fs)
+        ax.tick_params(axis="both", which="minor", length=3.5 * fs, width=0.8 * fs)
+        ax.text(0.05, 0.92, rf"$U_0$ = {case['U0']:.0f} m/s", transform=ax.transAxes, fontsize=14 * fs)
+        ax.legend(loc="best", frameon=True, fontsize=16 * fs)
+
+    fig.supxlabel("Diametro de particula, $d_p$ [µm]", fontsize=18 * fs)
+    fig.supylabel("Eficiencia de Entrada [-]", fontsize=18 * fs)
 
     out_base = "eficiencia_sonda_envuelta_aspiracion_v2_shroud"
     fig.savefig(base_dir / f"{out_base}.png", bbox_inches="tight")
@@ -427,7 +535,7 @@ def export_model_efficiency_table_pdf(base_dir: Path, cases):
     columns, rows = _build_model_efficiency_table(cases, TABLE_PARTICLE_RANGES_UM)
     fig, ax = plt.subplots(1, 1, figsize=(11.7, 8.3), constrained_layout=True)
     ax.axis("off")
-    table = ax.table(cellText=rows, colLabels=columns, loc="center", cellLoc="center")
+    table = ax.table(cellText=rows, colLabels=columns, loc="center", cellLoc="center")  # type: ignore[attr-defined]
     table.auto_set_font_size(False)
     table.set_fontsize(10)
     table.scale(1.0, 1.25)
