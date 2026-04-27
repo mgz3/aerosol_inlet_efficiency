@@ -381,7 +381,7 @@ def plot_total_sampling_figure(base_dir: Path, cases):
     )
 
     model_lines = {}
-    plc_lines = {}
+    cfd_lines = {}
 
     _add_sensor_range_background(ax_top)
     _add_sensor_range_background(ax_bottom)
@@ -406,7 +406,7 @@ def plot_total_sampling_figure(base_dir: Path, cases):
                 linestyle="--",
                 alpha=1.0,
             )
-            plc_lines[speed_lbl] = line_plc
+            cfd_lines[speed_lbl] = line_plc
             rel_diff = _relative_difference_percent(
                 case["model"]["dp_um"],
                 case["model"]["total_corr"],
@@ -430,28 +430,29 @@ def plot_total_sampling_figure(base_dir: Path, cases):
     ax_bottom.set_xlabel("Diametro de particula, $d_p$ [um]", fontsize=18 * fs)
     ax_bottom.set_ylabel("Dif. rel. [%]", fontsize=16 * fs)
 
-    # Leyenda tabular en dos columnas: Modelo | PLC.
+    # Leyenda tabular en dos columnas: Modelo | CFD.
     underline = lambda s: "".join(ch + "\u0332" for ch in s)
     header_model = Line2D([], [], linestyle="None")
-    header_plc = Line2D([], [], linestyle="None")
+    header_cfd = Line2D([], [], linestyle="None")
     empty = Line2D([], [], linestyle="None")
     model_handles_col = [header_model]
     model_labels_col = [underline("Modelo")]
-    plc_handles_col = [header_plc]
-    plc_labels_col = [underline("PLC")]
+    cfd_handles_col = [header_cfd]
+    cfd_labels_col = [underline("CFD")]
     for case in cases:
         speed_lbl = f"{int(round(case['U0']))} m/s"
         model_handles_col.append(model_lines.get(speed_lbl, empty))
         model_labels_col.append(speed_lbl if speed_lbl in model_lines else " ")
-        plc_handles_col.append(plc_lines.get(speed_lbl, empty))
-        plc_labels_col.append(speed_lbl if speed_lbl in plc_lines else " ")
+        cfd_handles_col.append(cfd_lines.get(speed_lbl, empty))
+        cfd_labels_col.append(speed_lbl if speed_lbl in cfd_lines else " ")
 
-    legend_handles = model_handles_col + plc_handles_col
-    legend_labels = model_labels_col + plc_labels_col
-    ax_top.legend(
+    legend_handles = model_handles_col + cfd_handles_col
+    legend_labels = model_labels_col + cfd_labels_col
+    legend_main = ax_top.legend(
         legend_handles,
         legend_labels,
-        loc="upper left",
+        loc="lower center",
+        bbox_to_anchor=(0.55, 0.0),
         frameon=True,
         fontsize=16 * fs,
         ncol=2,
@@ -459,6 +460,7 @@ def plot_total_sampling_figure(base_dir: Path, cases):
         columnspacing=1.4,
         handletextpad=0.8,
     )
+    ax_top.add_artist(legend_main)
     sensor_handles, sensor_labels = _build_sensor_range_legend_handles()
     sensor_legend = ax_top.legend(
         sensor_handles,
